@@ -64,7 +64,12 @@ function returnCounter(number=0) {
  Функция должна привязать переданные аргументы к функции F и вернуть получившуюся функцию
  */
 function bindFunction(fn) {
+    var args = [].slice.call(arguments, 1);
 
+    // используем apply, потому что у нас массив аргументов (bind и call используют аргументы через запятую
+    // если нужно было возвратить результат, а не функцию, можно бы было обойтись без bind -
+    // fn.apply(null, args)
+    return fn.bind.apply(fn, [null].concat(args))
 }
 
 export {
