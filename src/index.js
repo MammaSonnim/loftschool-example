@@ -52,9 +52,8 @@ function returnFnResult(fn) {
  При вызове F, переданное число должно быть увеличено на единицу и возвращено из F
  */
 function returnCounter(number=0) {
-    return function() {
-        return ++number;
-    }
+    // return function() { return ++number; }
+    return () => ++number;
 }
 
 /*
@@ -66,9 +65,10 @@ function returnCounter(number=0) {
 function bindFunction(fn) {
     var args = [].slice.call(arguments, 1);
 
-    // используем apply, потому что у нас массив аргументов (bind и call используют аргументы через запятую
-    // если нужно было возвратить результат, а не функцию, можно бы было обойтись без bind -
+    // используем apply, потому что у нас массив аргументов, а bind и call используют аргументы через запятую.
+    // По условию ужно вернуть функцию, а не результат, поэтому также используем bind, иначе можно было бы сделать так -
     // fn.apply(null, args)
+    // Если вызвать bindFunction(fn, 2, 4), то после применения apply выражение разворачивается в fn.bind(null, 2, 4)
     return fn.bind.apply(fn, [null].concat(args))
 }
 
