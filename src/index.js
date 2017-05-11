@@ -10,6 +10,26 @@
  Зарпещено использовать встроенные методы для работы с массивами
  */
 function isAllTrue(array, fn) {
+    if (!array.length) {
+        throw new Error('empty array'); 
+    }
+
+    if (typeof fn !== 'function') {
+        throw new Error('fn is not a function'); 
+    }
+
+    for (i = 0; i < array.length; i++) {
+        if (!fn(array[i]) {
+            return false;
+        }
+
+        return true;
+    }
+}
+
+var array = [1, 2, 3];
+var isNumber = function(value) {
+    return (typeof value == 'number');
 }
 
 /*
@@ -22,6 +42,21 @@ function isAllTrue(array, fn) {
  Зарпещено использовать встроенные методы для работы с массивами
  */
 function isSomeTrue(array, fn) {
+    if (!array.length) {
+        throw new Error('empty array'); 
+    }
+
+    if (typeof fn !== 'function') {
+        throw new Error('fn is not a function'); 
+    }
+
+    for (i = 0; i < array.length; i++) {
+        if (fn(array[i]) {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 /*
@@ -33,6 +68,22 @@ function isSomeTrue(array, fn) {
  - fn не является функцией (с текстом "fn is not a function")
  */
 function returnBadArguments(fn) {
+    if (typeof fn !== 'function') {
+        throw new Error('fn is not a function'); 
+    }
+
+    var args = [].slice.call(arguments, 1);
+    var failures = [];
+
+    for (i = 0; i < args.length; i++) {
+        try {
+            fn(args[i]);
+        } catch(e) {
+            failures.push(args[i]);
+        }
+    }
+
+    return failures;
 }
 
 /*
@@ -49,8 +100,30 @@ function returnBadArguments(fn) {
  - number не является числом (с текстом "number is not a number")
  - какой-либо из аргументов div является нулем (с текстом "division by 0")
  */
-function calculator() {
+function calculator(number=0) {
+    if (typeof number !== 'number') {
+        throw new Error('number is not a number'); 
+    }
+
+    var args = [].slice.call(arguments, 1);
+
+    return {
+        sum: function() {
+
+        },
+        dif: function() {
+
+        },
+        div:  function() {
+           
+        },
+        mul:  function() {
+
+        }
+    }
 }
+
+calculator.div(10, 5, 0)
 
 export {
     isAllTrue,
