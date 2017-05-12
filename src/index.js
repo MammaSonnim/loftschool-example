@@ -68,10 +68,9 @@ function returnBadArguments(fn) {
         throw new Error('fn is not a function'); 
     }
 
-    var args = [].slice.call(arguments, 1);
     var failures = [];
 
-    for (var i = 0; i < args.length; i++) {
+    for (var i = 1; i < args.length; i++) {
         try {
             fn(args[i]);
         } catch(e) {
@@ -100,8 +99,6 @@ function calculator(number=0) {
     if (typeof number !== 'number') {
         throw new Error('number is not a number'); 
     }
-
-    // var args = [].slice.call(arguments, 1);
 
     return {
         sum: function() {
