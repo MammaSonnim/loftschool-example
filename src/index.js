@@ -18,19 +18,15 @@ function isAllTrue(array, fn) {
         throw new Error('fn is not a function'); 
     }
 
-    for (i = 0; i < array.length; i++) {
-        if (!fn(array[i]) {
+    for (var i = 0; i < array.length; i++) {
+        if (!fn(array[i])) {
             return false;
         }
-
-        return true;
     }
+
+    return true;
 }
 
-var array = [1, 2, 3];
-var isNumber = function(value) {
-    return (typeof value == 'number');
-}
 
 /*
  Задача 2:
@@ -50,13 +46,13 @@ function isSomeTrue(array, fn) {
         throw new Error('fn is not a function'); 
     }
 
-    for (i = 0; i < array.length; i++) {
-        if (fn(array[i]) {
+    for (var i = 0; i < array.length; i++) {
+        if (fn(array[i])) {
             return true;
         }
-
-        return false;
     }
+
+    return false;
 }
 
 /*
@@ -75,7 +71,7 @@ function returnBadArguments(fn) {
     var args = [].slice.call(arguments, 1);
     var failures = [];
 
-    for (i = 0; i < args.length; i++) {
+    for (var i = 0; i < args.length; i++) {
         try {
             fn(args[i]);
         } catch(e) {
@@ -105,25 +101,37 @@ function calculator(number=0) {
         throw new Error('number is not a number'); 
     }
 
-    var args = [].slice.call(arguments, 1);
+    // var args = [].slice.call(arguments, 1);
 
     return {
         sum: function() {
+            var args = Array.from(arguments);
 
+            return args.reduce((prev, current) => prev + current, number);
         },
         dif: function() {
+            var args = Array.from(arguments);
 
+            return args.reduce((prev, current) => prev - current, number);
         },
-        div:  function() {
-           
-        },
-        mul:  function() {
+        div: function() {
+            var args = Array.from(arguments);
 
+            return args.reduce((prev, current) => {
+                if (current === 0) {
+                    throw new Error('division by 0');
+                }
+
+                return prev / current;
+            }, number);
+        },
+        mul: function() {
+            var args = Array.from(arguments);
+
+            return args.reduce((prev, current) => prev * current, number);
         }
     }
 }
-
-calculator.div(10, 5, 0)
 
 export {
     isAllTrue,
