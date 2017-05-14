@@ -70,11 +70,11 @@ function returnBadArguments(fn) {
 
     var failures = [];
 
-    for (var i = 1; i < args.length; i++) {
+    for (var i = 1; i < arguments.length; i++) {
         try {
-            fn(args[i]);
+            fn(arguments[i]);
         } catch(e) {
-            failures.push(args[i]);
+            failures.push(arguments[i]);
         }
     }
 
@@ -102,19 +102,13 @@ function calculator(number=0) {
 
     return {
         sum: function() {
-            var args = Array.from(arguments);
-
-            return args.reduce((prev, current) => prev + current, number);
+            return Array.prototype.reduce.call(arguments, (prev, current) => prev + current, number);
         },
         dif: function() {
-            var args = Array.from(arguments);
-
-            return args.reduce((prev, current) => prev - current, number);
+            return Array.prototype.reduce.call(arguments, (prev, current) => prev - current, number);
         },
         div: function() {
-            var args = Array.from(arguments);
-
-            return args.reduce((prev, current) => {
+            return Array.prototype.reduce.call(arguments, (prev, current) => {
                 if (current === 0) {
                     throw new Error('division by 0');
                 }
@@ -123,9 +117,7 @@ function calculator(number=0) {
             }, number);
         },
         mul: function() {
-            var args = Array.from(arguments);
-
-            return args.reduce((prev, current) => prev * current, number);
+            return Array.prototype.reduce.call(arguments, (prev, current) => prev * current, number);
         }
     }
 }
