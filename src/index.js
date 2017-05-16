@@ -60,6 +60,7 @@ function deleteProperty(obj, prop) {
  Функция должна проверить существует ли укзаанное свойство в указанном объекте
  */
 function hasProperty(obj, prop) {
+    return obj.hasOwnProperty(prop);
 }
 
 /*
@@ -67,6 +68,7 @@ function hasProperty(obj, prop) {
  Функция должна получить все перечисляемые свойства объекта и вернуть их в виде массива
  */
 function getEnumProps(obj) {
+    return Object.keys(obj);
 }
 
 /*
@@ -74,6 +76,22 @@ function getEnumProps(obj) {
  Функция должна перебрать все свойства объекта, преобразовать их имена в верхний регистра и вернуть в виде массива
  */
 function upperProps(obj) {
+    // первая реализация
+    var propArray = [];
+
+    for (var prop in obj) {
+        // hasOwnProperty ограничивает свойства только перечисляемыми элементами
+        if (obj.hasOwnProperty(prop)) {
+            propArray.push(prop.toUpperCase())
+        }
+    }
+
+    return propArray;
+
+    // вторая реализация, 2 цикла
+    // return Object.keys(obj).map(function(prop) {
+    //     return prop.toUpperCase()
+    // })
 }
 
 /*
@@ -81,6 +99,24 @@ function upperProps(obj) {
  Напишите аналог встроенного метода slice для работы с массивами
  */
 function slice(array, from, to) {
+    var newArray = [];
+    var length = array.length;
+
+    from = from || 0;
+    if (from < 0) {
+        from = length - from;
+    }
+
+    to = to || length;
+    if (to < 0) {
+        to = length - to;
+    }
+
+    for (var i = from; i < to; i++) {
+        newArray.push(array[i])
+    }
+
+    return newArray;
 }
 
 /*
