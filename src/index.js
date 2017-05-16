@@ -129,7 +129,7 @@ function slice(array, from, to) {
  */
 function createProxy(obj) {
     return new Proxy(obj, {
-        set: function(obj, prop, newValue) {
+        set(obj, prop, newValue) {
             if (typeof newValue  === 'number') {
                 obj[prop] = newValue * newValue;
 
