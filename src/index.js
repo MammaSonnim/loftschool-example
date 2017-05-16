@@ -104,12 +104,15 @@ function slice(array, from, to) {
 
     from = from || 0;
     if (from < 0) {
-        from = length - from;
+        from = Math.abs(from) > length ? 0 : length + from;
     }
 
-    to = to || length;
+    to = (to === undefined) ? length : to;
     if (to < 0) {
-        to = length - to;
+        to = length + to;
+    }
+    if (to > length) {
+        to = length;
     }
 
     for (var i = from; i < to; i++) {
@@ -125,6 +128,19 @@ function slice(array, from, to) {
  Proxy должен перехватывать все попытки записи значений свойств и возводить это значение в квадрат
  */
 function createProxy(obj) {
+    return new Proxy(obj, {
+        set: function(obj, prop, newValue) {
+            if (typeof newValue  === 'number') {
+                obj[prop] = newValue * newValue;
+
+                return true;
+            }
+
+            obj[prop] = newValue;
+
+            return true;
+        }
+    });
 }
 
 export {

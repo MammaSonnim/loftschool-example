@@ -278,17 +278,17 @@ describe('ДЗ 3 - объекты и массивы', () => {
             assert.deepEqual(result, target);
         });
     });
-    //
-    // describe('createProxy', () => {
-    //     it('должна вернуть Proxy, который возводит в квадрат любое записываемое значение', () => {
-    //         let obj = {};
-    //
-    //         obj = createProxy(obj);
-    //
-    //         obj.a = 2;
-    //         obj.b = 5;
-    //
-    //         assert.deepEqual(obj, { a: 4, b: 25 });
-    //     });
-    // });
+
+    describe('createProxy', () => {
+        it('должна вернуть Proxy, который возводит в квадрат любое записываемое значение', () => {
+            let obj = {};
+
+            obj = createProxy(obj);
+
+            obj.a = 2;
+            obj.b = 5;
+
+            assert.deepEqual(obj, { a: 4, b: 25 });
+        });
+    });
 });
