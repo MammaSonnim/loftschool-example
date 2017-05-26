@@ -23,6 +23,30 @@ let homeworkContainer = document.querySelector('#homework-container');
  * @return {Element}
  */
 function createDiv() {
+    var div = document.createElement('div');
+
+    var getRandomColor = function() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++ ) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    };
+
+    var getRandomSize = function(min, max) {
+        return (Math.floor(Math.random() * (max - min + 1)) + min) + 'px';
+    };
+
+    div.classList.add('draggable-div');
+    div.style.position = "absolute";
+    div.style.top = getRandomSize(0, 200);
+    div.style.left = getRandomSize(0, 200);
+    div.style.width = getRandomSize(5, 10);
+    div.style.height = getRandomSize(5, 10);
+    div.style.background = getRandomColor();
+
+    return div;
 }
 
 /**
@@ -31,6 +55,78 @@ function createDiv() {
  * @param {Element} target
  */
 function addListeners(target) {
+    /** @type {Object} */
+    var startPoint;
+
+    /** @type {boolean} */
+    var isDragging = false;
+
+    /** @param {MouseEvent} event */
+    var targetMousedownHandler = function(event) {
+        event.preventDefault();
+        addEventListeners(event);
+    };
+
+    /** @param {MouseEvent} event */
+    var documentMousemoveHandler = function(event) {
+        event.preventDefault();
+        setPosition(event, target);
+    };
+
+    /** @param {MouseEvent} event */
+    var documentMouseupHandler = function(event) {
+        removeEventListeners();
+    };
+
+    target.addEventListener('mousedown', targetMousedownHandler);
+
+    /**
+     * Навешиваются обработчики на движение и отпускание клавиши мыши
+     * @param {MouseEvent} event
+     */
+    function addEventListeners(event) {
+        if (isDragging) {
+            removeEventListeners();
+        }
+
+        isDragging = true;
+
+        startPoint = {
+            x: event.clientX,
+            y: event.clientY
+        };
+
+        document.addEventListener('mousemove', documentMousemoveHandler);
+        document.addEventListener('mouseup', documentMouseupHandler);
+    }
+
+    /**
+     * Рассчет позиции элемента при движении мыши
+     * @param {MouseEvent} event
+     * @param {HTMLElement} target
+     */
+    function setPosition(event, target) {
+        var shift = {
+            x: startPoint.x - event.clientX,
+            y: startPoint.y - event.clientY
+        };
+
+        target.style.top = (target.offsetTop - shift.y) + 'px';
+        target.style.left = (target.offsetLeft - shift.x) + 'px';
+
+        startPoint = {
+            x: event.clientX,
+            y: event.clientY
+        };
+    }
+
+    /** Снимаются обработчики на движение и отпускание клавиши мыши */
+    function removeEventListeners() {
+        document.removeEventListener('mousemove', documentMousemoveHandler);
+        document.removeEventListener('mouseup', documentMouseupHandler);
+
+        isDragging = false;
+    }
 }
 
 let addDivButton = homeworkContainer.querySelector('#addDiv');
