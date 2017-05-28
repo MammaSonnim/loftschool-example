@@ -36,6 +36,26 @@ let homeworkContainer = document.querySelector('#homework-container');
  * @return {Promise<Array<{name: string}>>}
  */
 function loadTowns() {
+    var url = 'https://raw.githubusercontent.com/smelukov/citiesTest/master/cities.json';
+
+    return load(url)
+        .then(response => JSON.parse(response))
+        .then(towns => towns.sort(
+            (a, b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0)
+        ));
+}
+
+function load(url) {
+    return new Promise((resolve) => {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+
+        xhr.addEventListener('load', function() {
+            resolve(xhr.response);
+        });
+
+        xhr.send();
+    });
 }
 
 /**
@@ -52,15 +72,41 @@ function loadTowns() {
  * @return {boolean}
  */
 function isMatching(full, chunk) {
+    chunk = new RegExp(chunk, 'i');
+
+    return !!(full.match(chunk));
+}
+
+function renderFilterResult(filteredTowns) {
+    filterResult.innerHTML = '';
+    var frag = document.createDocumentFragment();
+
+    filteredTowns.forEach(function(town) {
+        let filterResultItem = filterResultItemTmpl.cloneNode(true);
+        filterResultItem.innerHTML = town.name;
+
+        frag.appendChild(filterResultItem);
+    });
+
+    filterResult.appendChild(frag);
 }
 
 let loadingBlock = homeworkContainer.querySelector('#loading-block');
 let filterBlock = homeworkContainer.querySelector('#filter-block');
 let filterInput = homeworkContainer.querySelector('#filter-input');
 let filterResult = homeworkContainer.querySelector('#filter-result');
-let townsPromise;
+let filterResultItemTmpl = document.createElement('div');
 
-filterInput.addEventListener('keyup', function() {
+let townsPromise = loadTowns().then((towns) => {
+    filterInput.addEventListener('keyup', function() {
+        var filteredTowns = [];
+
+        if (filterInput.value) {
+            filteredTowns = towns.filter((item) => isMatching(item.name, filterInput.value));
+        }
+
+        renderFilterResult(filteredTowns);
+    });
 });
 
 export {
