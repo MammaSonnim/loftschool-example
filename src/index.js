@@ -32,18 +32,11 @@ function loadAndSortTowns() {
         xhr.addEventListener('load', function() {
             resolve(xhr.response);
         })
-    }).then((response) => {
-        var towns = JSON.parse(response);
-        var townsArr = [];
-
-        for (var town of towns) {
-            townsArr.push(town);
-        }
-
-        townsArr.sort((a, b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
-
-        return townsArr;
     })
+        .then(response => JSON.parse(response))
+        .then(towns => towns.sort(
+            (a, b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0)
+        ));
 }
 
 export {
