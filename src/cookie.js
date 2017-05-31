@@ -38,9 +38,93 @@ let addNameInput = homeworkContainer.querySelector('#add-name-input');
 let addValueInput = homeworkContainer.querySelector('#add-value-input');
 let addButton = homeworkContainer.querySelector('#add-button');
 let listTable = homeworkContainer.querySelector('#list-table tbody');
+let listRowTmpl = document.createElement('tr');
+let listCellTmpl = document.createElement('td');
+let deleteButtonTmpl = document.createElement('td');
+let listRow;
+let listCell;
+let deleteButton;
+let frag = document.createDocumentFragment();
+
+deleteButtonTmpl.innerHTML = '<button>Удалить</button>';
+
+/**
+ * Создает cookie с указанными именем и значением
+ *
+ * @param name - имя
+ * @param value - значение
+ */
+function createCookie(name, value) {
+    document.cookie = `${name}=${value};path=/;`
+}
+
+/**
+ * Удаляет cookie с указанным именем
+ *
+ * @param name - имя
+ */
+function deleteCookie(name) {
+    document.cookie = `${name}=;path=/;expires=${new Date(0)};`
+}
+
+/**
+ * Получает части разделенные по символу
+ *
+ * @returns {Array}
+ */
+function getChunks(full, divider) {
+    return full.split(divider);
+}
+
+// создать метод для отрисовки и удаления одного ряда
+/**
+ * Отрисовывает список cookies в таблице
+ *
+ * @param {Array} cookies
+ */
+function renderTable(cookies) {
+    if (!cookies) {
+        return;
+    }
+
+    listTable.innerHTML = '';
+
+    cookies.forEach(row => {
+        listRow = listRowTmpl.cloneNode(true);
+
+        getChunks(row, '=').forEach(cell => {
+            listCell = listCellTmpl.cloneNode(true);
+            listCell.innerHTML = cell;
+            listRow.appendChild(listCell);
+        });
+
+        deleteButton = deleteButtonTmpl.cloneNode(true);
+        listRow.appendChild(deleteButton);
+
+        frag.appendChild(listRow);
+    });
+
+    listTable.appendChild(frag);
+}
+
+// const cook = '_ym_uid=1477997572400563920; pixelRatio=2; vblastvisit=1490705236; vblastactivity=0; __utma=216415245.658853161.1482058994.1495786971.1496128144.20; _ym_isad=1; _ym_visorc_17649010=w'
+renderTable(getChunks(document.cookie, '; '));
 
 filterNameInput.addEventListener('keyup', function() {
 });
 
+// add
 addButton.addEventListener('click', () => {
 });
+
+// delete
+listTable.addEventListener('click', (event) => {
+    if (event.target.tagName = 'BUTTON') {
+        deleteCookie(); // в параметре имя ряда, которое равно имени куки
+        renderTable(); // или вести поиск по имени ряда и целенаправленно его удалять
+    }
+});
+
+// https://jsbin.com/qegonuz/edit?js,console,output
+
+
