@@ -42,20 +42,112 @@ let listRowTmpl = document.createElement('tr');
 let listCellTmpl = document.createElement('td');
 let deleteButtonTmpl = document.createElement('td');
 let listRow;
-let listCell;
 let deleteButton;
 let frag = document.createDocumentFragment();
 
 deleteButtonTmpl.innerHTML = '<button>Удалить</button>';
 
 /**
- * Создает cookie с указанными именем и значением
+ * Возвращает значение поля
  *
- * @param name - имя
- * @param value - значение
+ * @param {HTMLElement} input
+ * @returns {string}
  */
-function createCookie(name, value) {
-    document.cookie = `${name}=${value};path=/;`
+function getValue(input) {
+    return input.value;
+}
+
+/**
+ * Получает части разделенные по символу
+ *
+ * @returns {Array}
+ */
+function getChunks(full, divider) {
+    return full.split(divider);
+}
+
+/**
+ * Создает объект из отдельной cookie
+ *
+ * @param {string} cookie
+ * @returns {Object}
+ */
+function getCurrentCookie(cookie) {
+    var obj = {};
+    var chunks = getChunks(cookie, '=');
+
+    obj.name = chunks[0];
+    obj.value = chunks[1];
+
+    return obj;
+}
+
+/**
+ * Создает массив из объектов cookies
+ *
+ * @param {string} cookies
+ * @returns {Array<Object>}
+ */
+function getCurrentCookies(cookies) {
+    var currentCookies = getChunks(cookies, '; ');
+    var arr = [];
+
+    currentCookies.forEach(cookie => {
+        arr.push(getCurrentCookie(cookie));
+    });
+
+    return arr;
+}
+
+/**
+ * Создает объект cookie из введенных значений
+ *
+ * @returns {Object}
+ */
+function getNewCookie() {
+    var obj = {};
+
+    obj.name = getValue(addNameInput);
+    obj.value = getValue(addValueInput);
+
+    return obj;
+}
+
+/**
+ * Создает cookie в BOM
+ *
+ * @param {Object} config
+ */
+function createCookie(config) {
+    document.cookie = `${config.name}=${config.value};`;
+}
+
+/**
+ * Добавляет cookie в BOM и на страницу
+ *
+ * @param {Object} cookie
+ */
+function addCookie(cookie) {
+    var currentCookies = getCurrentCookies(document.cookie);
+
+    var compareNameAndValue = function(currentCookie) {
+        return cookie.name === currentCookie.name && cookie.value === currentCookie.value
+    };
+
+    if (currentCookies.some(compareNameAndValue)) {
+        return;
+    }
+
+    var compareName = function(currentCookie) {
+        return cookie.name === currentCookie.name
+    };
+
+    if (currentCookies.some(compareName)) {
+        deleteRow(document.getElementById(cookie.name));
+    }
+
+    createCookie(cookie);
+    renderRow(cookie);
 }
 
 /**
@@ -68,17 +160,50 @@ function deleteCookie(name) {
 }
 
 /**
- * Получает части разделенные по символу
+ * Создает один ряд таблицы
  *
- * @returns {Array}
+ * @param {Object} cookie
  */
-function getChunks(full, divider) {
-    return full.split(divider);
+function createRow(cookie) {
+    listRow = listRowTmpl.cloneNode(true);
+
+    var listCellName = listCellTmpl.cloneNode(true);
+    listCellName.innerHTML = cookie.name;
+    listRow.appendChild(listCellName);
+
+    var listCellValue = listCellTmpl.cloneNode(true);
+    listCellValue.innerHTML = cookie.value;
+    listRow.appendChild(listCellValue);
+
+    listRow.setAttribute('id', cookie.name);
+
+    deleteButton = deleteButtonTmpl.cloneNode(true);
+    listRow.appendChild(deleteButton);
+
+    frag.appendChild(listRow);
 }
 
-// создать метод для отрисовки и удаления одного ряда
 /**
- * Отрисовывает список cookies в таблице
+ * Отрисовывает один ряд таблицы
+ *
+ * @param {Object} cookie
+ */
+function renderRow(cookie) {
+    createRow(cookie);
+    listTable.appendChild(frag);
+}
+
+/**
+ * Удалеет один ряд таблицы
+ *
+ * @param {HTMLElement} row
+ */
+function deleteRow(row) {
+    row.remove();
+}
+
+/**
+ * Отрисовывает список всех cookies в таблице
  *
  * @param {Array} cookies
  */
@@ -89,42 +214,47 @@ function renderTable(cookies) {
 
     listTable.innerHTML = '';
 
-    cookies.forEach(row => {
-        listRow = listRowTmpl.cloneNode(true);
-
-        getChunks(row, '=').forEach(cell => {
-            listCell = listCellTmpl.cloneNode(true);
-            listCell.innerHTML = cell;
-            listRow.appendChild(listCell);
-        });
-
-        deleteButton = deleteButtonTmpl.cloneNode(true);
-        listRow.appendChild(deleteButton);
-
-        frag.appendChild(listRow);
+    cookies.forEach(cookie => {
+        createRow(cookie);
     });
 
     listTable.appendChild(frag);
 }
 
-// const cook = '_ym_uid=1477997572400563920; pixelRatio=2; vblastvisit=1490705236; vblastactivity=0; __utma=216415245.658853161.1482058994.1495786971.1496128144.20; _ym_isad=1; _ym_visorc_17649010=w'
-renderTable(getChunks(document.cookie, '; '));
+/** @param {Event} event*/
+function deleteButtonClickHandler(event) {
+    var row = event.target.parentNode.parentNode;
+    var rowName = row.getAttribute('id');
 
-filterNameInput.addEventListener('keyup', function() {
-});
+    deleteCookie(rowName);
+    deleteRow(row);
+}
 
-// add
-addButton.addEventListener('click', () => {
-});
+/** @param {Event} event*/
+function addButtonClickHandler(event) {
+    addCookie(getNewCookie());
+}
 
-// delete
-listTable.addEventListener('click', (event) => {
-    if (event.target.tagName = 'BUTTON') {
-        deleteCookie(); // в параметре имя ряда, которое равно имени куки
-        renderTable(); // или вести поиск по имени ряда и целенаправленно его удалять
-    }
-});
+/** @param {Event} event*/
+function filterNameInputKeyupHandler(event) {
+    
+}
 
+function init() {
+    renderTable(getCurrentCookies(document.cookie));
+    filterNameInput.addEventListener('keyup', function() {
+        filterNameInputKeyupHandler();
+    });
+    addButton.addEventListener('click', (event) => {
+        addButtonClickHandler(event);
+    });
+    listTable.addEventListener('click', (event) => {
+        if (event.target.tagName = 'BUTTON') {
+            deleteButtonClickHandler(event);
+        }
+    });
+}
+
+
+init();
 // https://jsbin.com/qegonuz/edit?js,console,output
-
-
