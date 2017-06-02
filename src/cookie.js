@@ -51,19 +51,29 @@ deleteButtonTmpl.innerHTML = '<button>Удалить</button>';
  * Возвращает значение поля
  *
  * @param {HTMLElement} input
- * @returns {string}
+ * @return {string}
  */
 function getValue(input) {
     return input.value;
 }
-
 // или const getValue = ({value}) => value;
+
+/**
+ * Проверяет встречается ли подстрока chunk в строке full
+ *
+ * @param {string} full
+ * @param {string} chunk
+ * @return {boolean}
+ */
+function isMatching(full, chunk) {
+    return !!(full.match(new RegExp(chunk, 'i')));
+}
 
 /**
  * Создает объект из отдельной cookie
  *
  * @param {string} cookie
- * @returns {Object}
+ * @return {Object}
  */
 function getCurrentCookie(cookie) {
     const [name, value] = cookie.split('=');
@@ -78,7 +88,7 @@ function getCurrentCookie(cookie) {
  * Создает массив из объектов cookies
  *
  * @param {string} cookies
- * @returns {Array<Object>}
+ * @return {Array<Object>}
  */
 function getCurrentCookies(cookies) {
    return cookies.split('; ').map(cookie => getCurrentCookie(cookie));
@@ -87,7 +97,7 @@ function getCurrentCookies(cookies) {
 /**
  * Создает объект cookie из введенных значений
  *
- * @returns {Object}
+ * @return {Object}
  */
 function getNewCookie() {
     return {
@@ -161,7 +171,7 @@ function addCookie(newCookie) {
 /**
  * Удаляет cookie с указанным именем
  *
- * @param name - имя
+ * @param {string} name - имя
  */
 function deleteCookie(name) {
     document.cookie = `${name}=;path=/;expires=${new Date(0)};`
@@ -230,20 +240,19 @@ function renderTable(cookies) {
 }
 
 /**
- * Проверяет встречается ли подстрока chunk в строке full
-
- * @return {boolean}
+ * Возвращает отфильтрованные cookies
+ *
+ * @param {Array} currentCookies
+ * @param {string} filterValue
+ * @return {Array}
  */
-function isMatching(full, chunk) {
-    chunk = new RegExp(chunk, 'i');
-
-    return !!(full.match(chunk));
-}
-
 function getFilteredCookies(currentCookies, filterValue) {
     return currentCookies.filter(item => isMatching(item.name + item.value, filterValue));
 }
 
+/**
+ * Запускает рендер отфильтрованных cookies
+ */
 function renderFilteredCookies() {
     var currentCookies = getCurrentCookies(document.cookie);
     var filterValue = filterNameInput.value;
@@ -290,4 +299,3 @@ function init() {
 }
 
 init();
-// https://jsbin.com/qegonuz/edit?js,console,output
