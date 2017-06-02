@@ -57,14 +57,7 @@ function getValue(input) {
     return input.value;
 }
 
-/**
- * Получает части разделенные по символу
- *
- * @returns {Array}
- */
-function getChunks(full, divider) {
-    return full.split(divider);
-}
+// или const getValue = ({value}) => value;
 
 /**
  * Создает объект из отдельной cookie
@@ -73,13 +66,12 @@ function getChunks(full, divider) {
  * @returns {Object}
  */
 function getCurrentCookie(cookie) {
-    var obj = {};
-    var chunks = getChunks(cookie, '=');
+    const [name, value] = cookie.split('=');
 
-    obj.name = chunks[0];
-    obj.value = chunks[1];
-
-    return obj;
+    return {
+        name,
+        value
+    };
 }
 
 /**
@@ -89,14 +81,7 @@ function getCurrentCookie(cookie) {
  * @returns {Array<Object>}
  */
 function getCurrentCookies(cookies) {
-    var currentCookies = getChunks(cookies, '; ');
-    var arr = [];
-
-    currentCookies.forEach(cookie => {
-        arr.push(getCurrentCookie(cookie));
-    });
-
-    return arr;
+   return cookies.split('; ').map(cookie => getCurrentCookie(cookie));
 }
 
 /**
@@ -105,49 +90,72 @@ function getCurrentCookies(cookies) {
  * @returns {Object}
  */
 function getNewCookie() {
-    var obj = {};
-
-    obj.name = getValue(addNameInput);
-    obj.value = getValue(addValueInput);
-
-    return obj;
+    return {
+        name: getValue(addNameInput),
+        value: getValue(addValueInput)
+    };
 }
 
 /**
  * Создает cookie в BOM
  *
- * @param {Object} config
+ * @param {Object} {name, value}
  */
-function createCookie(config) {
-    document.cookie = `${config.name}=${config.value};`;
+function createCookie({name, value}) {
+    document.cookie = `${name}=${value};`;
+}
+
+/**
+ * Сравнивает имя и значение текущих cookie и новой
+ *
+ * @param {Array} currentCookies
+ * @param {Object} newCookie
+ */
+function isEqualNameAndValue(currentCookies, newCookie) {
+    return currentCookies.some(currentCookie => newCookie.name === currentCookie.name && newCookie.value === currentCookie.value)
+}
+
+/**
+ * Сравнивает имя текущих cookie и новой
+ *
+ * @param {Array} currentCookies
+ * @param {Object} newCookie
+ */
+function isEqualName(currentCookies, newCookie) {
+    return currentCookies.some(currentCookie => newCookie.name === currentCookie.name)
+}
+
+/**
+ * Проверяет, соответствует ли новые cookie значению фильтра
+ *
+ * @param {string} newCookieValue
+ * @param {string} filterValue
+ */
+function isMatchingToFilter(newCookieValue, filterValue) {
+    return isMatching(newCookieValue, filterValue);
 }
 
 /**
  * Добавляет cookie в BOM и на страницу
  *
- * @param {Object} cookie
+ * @param {Object} newCookie
  */
-function addCookie(cookie) {
+function addCookie(newCookie) {
     var currentCookies = getCurrentCookies(document.cookie);
 
-    var compareNameAndValue = function(currentCookie) {
-        return cookie.name === currentCookie.name && cookie.value === currentCookie.value
-    };
-
-    if (currentCookies.some(compareNameAndValue)) {
+    if (isEqualNameAndValue(currentCookies, newCookie)) {
         return;
     }
 
-    var compareName = function(currentCookie) {
-        return cookie.name === currentCookie.name
-    };
-
-    if (currentCookies.some(compareName)) {
-        deleteRow(document.getElementById(cookie.name));
+    if (isEqualName(currentCookies, newCookie)) {
+        deleteRow(document.getElementById(newCookie.name));
     }
 
-    createCookie(cookie);
-    renderRow(cookie);
+    if (!filterNameInput.value || isMatchingToFilter(newCookie.name + newCookie.value, filterNameInput.value)) {
+        renderRow(newCookie);
+    }
+
+    createCookie(newCookie);
 }
 
 /**
@@ -196,7 +204,7 @@ function renderRow(cookie) {
 /**
  * Удалеет один ряд таблицы
  *
- * @param {HTMLElement} row
+ * @param {Object} row
  */
 function deleteRow(row) {
     row.remove();
@@ -221,6 +229,32 @@ function renderTable(cookies) {
     listTable.appendChild(frag);
 }
 
+/**
+ * Проверяет встречается ли подстрока chunk в строке full
+
+ * @return {boolean}
+ */
+function isMatching(full, chunk) {
+    chunk = new RegExp(chunk, 'i');
+
+    return !!(full.match(chunk));
+}
+
+function getFilteredCookies(currentCookies, filterValue) {
+    return currentCookies.filter(item => isMatching(item.name + item.value, filterValue));
+}
+
+function renderFilteredCookies() {
+    var currentCookies = getCurrentCookies(document.cookie);
+    var filterValue = filterNameInput.value;
+
+    if (filterValue) {
+        renderTable(getFilteredCookies(currentCookies, filterValue))
+    } else {
+        renderTable(currentCookies);
+    }
+}
+
 /** @param {Event} event*/
 function deleteButtonClickHandler(event) {
     var row = event.target.parentNode.parentNode;
@@ -237,7 +271,7 @@ function addButtonClickHandler(event) {
 
 /** @param {Event} event*/
 function filterNameInputKeyupHandler(event) {
-    
+    renderFilteredCookies();
 }
 
 function init() {
@@ -249,12 +283,11 @@ function init() {
         addButtonClickHandler(event);
     });
     listTable.addEventListener('click', (event) => {
-        if (event.target.tagName = 'BUTTON') {
+        if (event.target.tagName === 'BUTTON') {
             deleteButtonClickHandler(event);
         }
     });
 }
-
 
 init();
 // https://jsbin.com/qegonuz/edit?js,console,output
