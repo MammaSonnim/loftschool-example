@@ -1,121 +1,146 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>{{htmlWebpackPlugin.options.title}}</title>
+    <meta charset="UTF-8">
+    <title>{{htmlWebpackPlugin.options.title}}</title>
+    <style>
+        html {
+            box-sizing: border-box;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: inherit;
+            margin: 0;
+            padding: 0;
+            font-weight: normal;
+        }
+
+        body {
+            font-family: Arial;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #homework-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #808080;
+        }
+
+        .friends-popup {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            width: 500px;
+            height: 400px;
+            background-color: #fff;
+            border-radius: 10px;
+        }
+
+        .friends-popup__header {
+            background-color: #ff6347;
+            color: #fff;
+            padding: 10px 20px;
+        }
+
+        .friends-popup__content {
+            display: flex;
+            flex: 1 0 auto;
+        }
+
+        .friends-popup__footer {
+            background-color: #eaeaea;
+            padding: 10px 20px;
+            text-align: right;
+        }
+
+        .friends-popup__save {
+            padding: 7px 10px;
+            border: none;
+            outline: none;
+            background-color: #ff6347;
+            color: #fff;
+            border-radius: 10px;
+        }
+
+        .friends-section {
+            width: 50%;
+        }
+
+        .friends-section:first-of-type {
+            border-right: 1px solid #eaeaea;
+        }
+
+        .friends-section__filter-wrapper {
+            background-color: #eaeaea;
+            padding: 10px;
+        }
+
+        .friends-section__filter {
+            width: 100%;
+            line-height: 18px;
+            border-radius: 10px;
+            outline: none;
+            border: none;
+        }
+
+        .friends-section__title {
+            padding: 10px;
+            border-bottom: 1px solid #eaeaea;
+            background-color: #fff;
+            font-size: 14px;
+        }
+
+        .friends-list {
+            list-style: none;
+            overflow: auto;
+            height: 250px;
+        }
+
+        .friend {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0 10px;
+            padding: 10px 0;
+            border-top: 1px solid #eaeaea;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        .friend:first-of-type {
+            border-top: none;
+        }
+
+        .friend__info {
+            display: flex;
+            align-items: center;
+        }
+
+        .friend__img {
+            display: block;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        .friend__name {
+            font-weight: normal;
+            font-size: 12px;
+        }
+    </style>
+    <script src="http://vk.com/js/api/openapi.js" type="text/javascript"></script>
 </head>
 <body>
-<style>
-    html {
-        box-sizing: border-box;
-    }
-    *,
-    *::before,
-    *::after {
-        box-sizing: inherit;
-    }
-    body {
-        font-family: Arial;
-    }
-    img {
-        max-width: 100%;
-        height: auto;
-    }
-    #homework-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        background-color: #808080;
-    }
-    .friends-popup {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        width: 500px;
-        height: 400px;
-        background-color: #fff;
-        border-radius: 10px;
-    }
-    .friends-popup__header {
-        background-color: #ff6347;
-        color: #fff;
-        padding: 10px 20px;
-    }
-    .friends-popup__content {
-        display: flex;
-        flex: 1 0 auto;
-    }
-    .friends-popup__footer {
-        background-color: #eaeaea;
-        padding: 10px 20px;
-        text-align: right;
-    }
-    .friends-popup__save {
-        padding: 7px 10px;
-        border: none;
-        outline: none;
-        background-color: #ff6347;
-        color: #fff;
-        border-radius: 10px;
-    }
-    .friends-section {
-        width: 50%;
-    }
-    .friends-section:first-of-type {
-        border-right: 1px solid #eaeaea;
-    }
-    .friends-section__filter-wrapper {
-        background-color: #eaeaea;
-        padding: 10px;
-    }
-    .friends-section__filter {
-        width: 100%;
-        line-height: 18px;
-        border-radius: 10px;
-        outline: none;
-        border: none;
-    }
-    .friends-section__title {
-        padding: 10px;
-        border-bottom: 1px solid #eaeaea;
-        background-color: #fff;
-        font-size: 14px;
-    }
-    .friends-list {
-        list-style: none;
-    }
-    .friend {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin: 0 10px;
-        padding: 10px 0;
-        border-top: 1px solid #eaeaea;
-        border-bottom: 1px solid #eaeaea;
-    }
-    .friend:first-of-type {
-        border-top: none;
-    }
-    .friend__info {
-        display: flex;
-        align-items: center;
-    }
-    .friend__img {
-        display: block;
-        border-radius: 50%;
-        border: 1px solid #f00;
-        width: 50px;
-        height: 50px;
-        margin-right: 10px;
-    }
-    .friend__name {
-        font-weight: normal;
-        font-size: 12px;
-    }
-</style>
 <div id="homework-container">
-    <section class="friends-popup">
+    <section class="friends-popup" id="popup">
         <header class="friends-popup__header">
             <div class="friends-popup__title">Выберите друзей</div>
         </header>
@@ -123,32 +148,32 @@
             <section class="friends-popup__section friends-section">
                 <header class="friends-section__header">
                     <div class="friends-section__filter-wrapper">
-                        <input type="text" class="friends-section__filter">
+                        <input type="text" class="friends-section__filter" id="filter-all">
                     </div>
                     <h2 class="friends-section__title">Ваши друзья</h2>
                 </header>
-                <ul class="friends-section__list friends-list"></ul>
+                <ul class="friends-section__list friends-list" id="list-all"></ul>
             </section>
             <section class="friends-popup__section friends-section">
                 <header class="friends-section__header">
                     <div class="friends-section__filter-wrapper">
-                        <input type="text" class="friends-section__filter">
+                        <input type="text" class="friends-section__filter" id="filter-selected">
                     </div>
                     <h2 class="friends-section__title">Друзья в списке</h2>
                 </header>
-                <ul class="friends-section__list friends-list"></ul>
+                <ul class="friends-section__list friends-list" id="list-selected"></ul>
             </section>
         </div>
         <footer class="friends-popup__footer">
-            <button class="friends-popup__save">Сохранить</button>
+            <button class="friends-popup__save" id="save">Сохранить</button>
         </footer>
     </section>
 
-    <template id="friend-template">
+    <template id="template">
         <li class="friend">
             <div class="friend__info">
-                <img src="" alt="" class="friend__img">
-                <h3 class="friend__name"></h3>
+                <img src="" alt="" class="friend__img img" width="50" height="50">
+                <h3 class="friend__name name"></h3>
             </div>
             <button class="friend__toogle"></button>
         </li>
