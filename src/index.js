@@ -9,12 +9,13 @@ const ERROR_AUTH = 'Не удалось авторизоваться';
 const VK_RESPONSE_VERSION = '5.64';
 const VK_RESPONSE_FIELDS = 'photo_100';
 const VK_NO_PHOTO = 'http://vk.com/images/camera_b.gif';
+let storage = localStorage;
 
 Handlebars.registerHelper('photo', function(value) {
     return value || VK_NO_PHOTO;
 });
 
-var friendTemplate = '' +
+const friendTemplate = '' +
     '{{#each items}}' +
         '<li class="friend">' +
             '<div class="friend__info">' +
@@ -59,11 +60,49 @@ function vkInit() {
     })
 }
 
+function getFriendsObject(arr) {
+    let item;
+    let id;
+    let obj = {};
+
+    for (let i = 0; i < arr.length; i++) {
+        item = arr[i];
+        id = item.id;
+
+        obj[id] = {};
+        obj[id].first_name = item.first_name;
+        obj[id].last_name = item.last_name;
+        obj[id].photo_100 = item.photo_100;
+    }
+
+    return obj;
+}
+
+function saveClickHandler() {
+    let listAllHtml = listAllNode.innerHTML;
+    let listSelectedHTML = listSelectedNode.innerHTML;
+
+    storage.listAllHtml = listAllHtml;
+    storage.listSelectedHTML = listSelectedHTML;
+}
+
 new Promise(function(resolve) {
     window.onload = resolve;
 })
     .then(() => vkInit())
     .then(() => vkApi('users.get', {}))
+    // .then(() => {
+    //     return storage.data ? JSON.parse(storage.data) : vkApi('friends.get', {fields: VK_RESPONSE_FIELDS});
+    // })
     .then(() => vkApi('friends.get', {fields: VK_RESPONSE_FIELDS}))
-    .then(response => listAllNode.innerHTML = templateFn(response))
+    .then(response => {
+        return listAllNode.innerHTML = templateFn(response);
+
+        // return getFriendsObject(response.items);
+    })
+    .then(friends => {
+        save.addEventListener('click', function() {
+            saveClickHandler();
+        })
+    })
     .catch(e => alert(e.message));
