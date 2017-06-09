@@ -1,15 +1,16 @@
-const homeworkContainer = document.querySelector('#homework-container');
-const popup = document.querySelector('#popup');
-const listAll = document.querySelector('#list-all');
-const listSelected = document.querySelector('#list-selected');
-const filterAll = document.querySelector('#filter-all');
-const filterSelected = document.querySelector('#filter-selected');
-const saveBtn = document.querySelector('#save');
-const template = document.querySelector('#template');
-const itemSource = (template.content || template).querySelector('.friend');
+const homeworkContainerNode = document.querySelector('#homework-container');
+const popupNode = document.querySelector('#popup');
+const listAllNode = document.querySelector('#list-all');
+const listSelectedNode = document.querySelector('#list-selected');
+const filterAllNode = document.querySelector('#filter-all');
+const filterSelectedNode = document.querySelector('#filter-selected');
+const saveBtnNode = document.querySelector('#save');
 const ERROR_AUTH = 'Не удалось авторизоваться';
 const VK_RESPONSE_VERSION = '5.64';
 const VK_RESPONSE_FIELDS = 'photo_100';
+const VK_NO_PHOTO = 'http://vk.com/images/camera_b.gif';
+
+var itemTemplate = '<div class="friend__info"><img src="{{photo}}" alt="{{firstName}} {{lastName}}" class="friend__img img" width="50" height="50"><h3 class="friend__name name">{{firstName}} {{lastName}}</h3></div><button class="friend__toogle"></button>';
 
 function vkApi(method, options) {
     if (!options.v) {
@@ -44,20 +45,29 @@ function vkInit() {
 }
 
 function renderItems(items) {
-    let fragment = document.createDocumentFragment();
+    const fragment = document.createDocumentFragment();
+    const templateFn = Handlebars.compile(itemTemplate);
+
+    let itemNode;
+    let html;
+    let data;
 
     items.forEach(item => {
-        let itemNode = itemSource.cloneNode(true);
-        let itemNameNode = itemNode.querySelector('.name');
-        let itemImgNode = itemNode.querySelector('.img');
+        itemNode = document.createElement('li');
+        itemNode.classList.add('friend');
 
-        itemNameNode.innerText = itemImgNode.alt = `${item.first_name} ${item.last_name}`;
-        itemImgNode.src = item.photo_100;
+        data = {
+            photo: item.photo_100 || VK_NO_PHOTO,
+            firstName: item.first_name,
+            lastName: item.last_name
+        };
 
+        html = templateFn(data);
+        itemNode.innerHTML = html;
         fragment.appendChild(itemNode);
     });
 
-    listAll.appendChild(fragment);
+    listAllNode.appendChild(fragment);
 }
 
 new Promise(function(resolve) {
