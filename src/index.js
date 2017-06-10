@@ -9,24 +9,22 @@ const ERROR_AUTH = 'Не удалось авторизоваться';
 const VK_RESPONSE_VERSION = '5.64';
 const VK_RESPONSE_FIELDS = 'photo_100';
 const VK_NO_PHOTO = 'http://vk.com/images/camera_b.gif';
+const fragment = document.createDocumentFragment();
 let storage = localStorage;
+let idsInListAll = '';
+let idsInListSelected = '';
 
 Handlebars.registerHelper('photo', function(value) {
     return value || VK_NO_PHOTO;
 });
-
 const friendTemplate = '' +
-    '{{#each items}}' +
-        '<li class="friend">' +
-            '<div class="friend__info">' +
-                '<img src="{{photo photo_100}}" alt="{{first_name}} {{last_name}}" class="friend__img img" width="50" height="50">' +
-                '<h3 class="friend__name name">{{first_name}} {{last_name}}</h3>' +
-            '</div>' +
-            '<button class="friend__toogle"></button>' +
-        '</li>' +
-    '{{/each}}';
-
+'<div class="friend__info">' +
+    '<img src="{{photo photo_100}}" alt="{{first_name}} {{last_name}}" class="friend__img img" width="50" height="50">' +
+    '<h3 class="friend__name name">{{first_name}} {{last_name}}</h3>' +
+'</div>' +
+'<button class="friend__toogle"></button>';
 const templateFn = Handlebars.compile(friendTemplate);
+
 
 function vkApi(method, options) {
     if (!options.v) {
@@ -78,12 +76,60 @@ function getFriendsObject(arr) {
     return obj;
 }
 
-function saveClickHandler() {
-    let listAllHtml = listAllNode.innerHTML;
-    let listSelectedHTML = listSelectedNode.innerHTML;
+function saveIDs(list, container) {
+    let friends = list.childNodes;
 
-    storage.listAllHtml = listAllHtml;
-    storage.listSelectedHTML = listSelectedHTML;
+    for (var friend of friends) {
+        container += friend.dataset.id + ' ';
+    }
+}
+
+function saveClickHandler() {
+    saveIDs(listAllNode, storage.IDsInListAll);
+    saveIDs(listSelectedNode, storage.IDsInListSelected);
+}
+
+function addListeners() {
+    save.addEventListener('click', saveClickHandler())
+}
+
+function renderFriends(friendsObject, list) {
+    let itemNode;
+
+    for (let id in friendsObject) {
+        itemNode = document.createElement('li');
+        itemNode.classList.add('friend');
+        itemNode.dataset.id = id;
+        itemNode.innerHTML = templateFn(friendsObject[id]);
+        fragment.appendChild(itemNode);
+    }
+
+    list.appendChild(fragment);
+}
+
+function getFilteredObjectByIDs(ids, obj) {
+    var newObj = {};
+
+    ids = ids.split(' ');
+
+    ids.forEach(id => {
+        newObj[id] = obj[id];
+    });
+
+    return newObj;
+}
+
+function renderLists(friendsObject) {
+    if (!storage.IDsInListAll && !storage.IDsInListSelected) {
+        renderFriends(friendsObject, listAllNode);
+        return;
+    }
+
+    const friendsInListAll = getFilteredObjectByIDs(storage.IDsInListAll, friendsObject);
+    const friendsInListSelected = getFilteredObjectByIDs(storage.IDsInListSelected, friendsObject);
+
+    renderFriends(friendsInListAll, listAllNode);
+    renderFriends(friendsInListSelected, listSelectedNode);
 }
 
 new Promise(function(resolve) {
@@ -91,18 +137,17 @@ new Promise(function(resolve) {
 })
     .then(() => vkInit())
     .then(() => vkApi('users.get', {}))
-    // .then(() => {
-    //     return storage.data ? JSON.parse(storage.data) : vkApi('friends.get', {fields: VK_RESPONSE_FIELDS});
-    // })
     .then(() => vkApi('friends.get', {fields: VK_RESPONSE_FIELDS}))
-    .then(response => {
-        return listAllNode.innerHTML = templateFn(response);
-
-        // return getFriendsObject(response.items);
-    })
-    .then(friends => {
-        save.addEventListener('click', function() {
-            saveClickHandler();
-        })
-    })
+    .then(response => getFriendsObject(response.items))
+    .then(friendsObject => renderLists(friendsObject))
+    .then(() => addListeners())
     .catch(e => alert(e.message));
+
+
+// 1. авторизация
+// 2. дергаем с сервера
+// 3. преобразовать в объект
+// 4. рисуем в соответствие с размещенными айдишниками
+// 5. навешиваем слушатели на крестики, драг-н-дроп
+// 6. при перемещении таскаем ноды
+// 7. при сохранении формируем 2 листа с айдишниками
