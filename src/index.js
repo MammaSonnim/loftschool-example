@@ -333,8 +333,7 @@ function toggleClickHandler(event) {
 function addListeners() {
     saveBtnNode.addEventListener('click', saveClickHandler);
     addDragNDropListeners(popupNode);
-    filterAllNode.addEventListener('keyup', filterKeyupHandler);
-    filterSelectedNode.addEventListener('keyup', filterKeyupHandler);
+    popupNode.addEventListener('keyup', filterKeyupHandler);
     contentNode.addEventListener('click', toggleClickHandler);
 }
 
