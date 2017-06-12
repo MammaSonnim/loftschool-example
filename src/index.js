@@ -13,7 +13,6 @@ const VK_NO_PHOTO = 'http://vk.com/images/camera_b.gif';
 const fragment = document.createDocumentFragment();
 const idDivider = ',';
 const storage = localStorage;
-let draggedItem = null;
 let friendsInListAll = {};
 let friendsInListSelected = {};
 let filteredFriends;
@@ -256,6 +255,8 @@ function moveFriend(friend, targetList, filterValue) {
  * @param {HTMLElement} node
  */
 function addDragNDropListeners(node) {
+    let draggedItem = null;
+
     node.addEventListener('dragstart', event => {
          if (event.target.tagName.toLowerCase() === 'li') {
              draggedItem = event.target;
