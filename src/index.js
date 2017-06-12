@@ -98,7 +98,7 @@ function getFriendsObject(arr) {
 }
 
 /**
- * Создает объект из сохраненных друзей
+ * Возвращает объект с друзьми только с теми ID, которые были сохранены
  *
  * @param {string} ids
  * @param {Object} obj
