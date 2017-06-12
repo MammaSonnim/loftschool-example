@@ -121,6 +121,7 @@
         .friend__info {
             display: flex;
             align-items: center;
+            pointer-events: none;
         }
 
         .friend__img {
@@ -135,6 +136,21 @@
             font-weight: normal;
             font-size: 12px;
         }
+
+        .friend__toggle {
+            outline: none;
+            border: none;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .friends-list_all .friend__toggle {
+            background-color: tomato;
+        }
+
+        .friends-list_selected .friend__toggle {
+            background-color: lightgrey;
+        }
     </style>
     <script src="http://vk.com/js/api/openapi.js" type="text/javascript"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.10/handlebars.min.js" type="text/javascript"></script>
@@ -145,7 +161,7 @@
         <header class="friends-popup__header">
             <div class="friends-popup__title">Выберите друзей</div>
         </header>
-        <div class="friends-popup__content">
+        <div class="friends-popup__content" id="content">
             <section class="friends-popup__section friends-section">
                 <header class="friends-section__header">
                     <div class="friends-section__filter-wrapper">
@@ -153,7 +169,7 @@
                     </div>
                     <h2 class="friends-section__title">Ваши друзья</h2>
                 </header>
-                <ul class="friends-section__list friends-list" id="list-all"></ul>
+                <ul class="friends-section__list friends-list friends-list_all" id="list-all"></ul>
             </section>
             <section class="friends-popup__section friends-section">
                 <header class="friends-section__header">
@@ -162,7 +178,7 @@
                     </div>
                     <h2 class="friends-section__title">Друзья в списке</h2>
                 </header>
-                <ul class="friends-section__list friends-list" id="list-selected"></ul>
+                <ul class="friends-section__list friends-list friends-list_selected" id="list-selected"></ul>
             </section>
         </div>
         <footer class="friends-popup__footer">

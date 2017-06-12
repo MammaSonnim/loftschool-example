@@ -1,18 +1,22 @@
 const homeworkContainerNode = document.querySelector('#homework-container');
-const popupNode = document.querySelector('#popup');
-const listAllNode = document.querySelector('#list-all');
-const listSelectedNode = document.querySelector('#list-selected');
-const filterAllNode = document.querySelector('#filter-all');
-const filterSelectedNode = document.querySelector('#filter-selected');
-const saveBtnNode = document.querySelector('#save');
+const popupNode = homeworkContainerNode.querySelector('#popup');
+const contentNode = popupNode.querySelector('#content');
+const listAllNode = contentNode.querySelector('#list-all');
+const listSelectedNode = contentNode.querySelector('#list-selected');
+const filterAllNode = contentNode.querySelector('#filter-all');
+const filterSelectedNode = contentNode.querySelector('#filter-selected');
+const saveBtnNode = popupNode.querySelector('#save');
 const ERROR_AUTH = 'Не удалось авторизоваться';
 const VK_RESPONSE_VERSION = '5.64';
 const VK_RESPONSE_FIELDS = 'photo_100';
 const VK_NO_PHOTO = 'http://vk.com/images/camera_b.gif';
 const fragment = document.createDocumentFragment();
-let storage = localStorage;
-let idsInListAll = '';
-let idsInListSelected = '';
+const idDivider = ',';
+const storage = localStorage;
+let draggedItem = null;
+let friendsInListAll = {};
+let friendsInListSelected = {};
+let filteredFriends;
 
 Handlebars.registerHelper('photo', function(value) {
     return value || VK_NO_PHOTO;
@@ -22,10 +26,16 @@ const friendTemplate = '' +
     '<img src="{{photo photo_100}}" alt="{{first_name}} {{last_name}}" class="friend__img img" width="50" height="50">' +
     '<h3 class="friend__name name">{{first_name}} {{last_name}}</h3>' +
 '</div>' +
-'<button class="friend__toogle"></button>';
+'<button class="friend__toggle"></button>';
 const templateFn = Handlebars.compile(friendTemplate);
 
-
+/**
+ * Обрщается к api VK и получает данные
+ *
+ * @param {string} method
+ * @param {Object} options
+ * @return {Promise}
+ */
 function vkApi(method, options) {
     if (!options.v) {
         options.v = VK_RESPONSE_VERSION;
@@ -42,6 +52,11 @@ function vkApi(method, options) {
     })
 }
 
+/**
+ * Инициализирует обращение к VK
+ *
+ * @return {Promise}
+ */
 function vkInit() {
     return new Promise((resolve, reject) => {
         VK.init({
@@ -58,6 +73,12 @@ function vkInit() {
     })
 }
 
+/**
+ * Создает объект с друзьями из данных c VK
+ *
+ * @param {Array} arr
+ * @return {Object}
+ */
 function getFriendsObject(arr) {
     let item;
     let id;
@@ -76,60 +97,235 @@ function getFriendsObject(arr) {
     return obj;
 }
 
-function saveIDs(list, container) {
-    let friends = list.childNodes;
+/**
+ * Создает объект из сохраненных друзей
+ *
+ * @param {string} ids
+ * @param {Object} obj
+ * @return {Object}
+ */
+function getSavedFriendObjects(ids, obj) {
+    let savedFriends = {};
+    let idsArr = ids.split(idDivider);
 
-    for (var friend of friends) {
-        container += friend.dataset.id + ' ';
+    idsArr.forEach(id => {
+        savedFriends[id] = obj[id];
+    });
+
+    return savedFriends;
+}
+
+/**
+ * Создает список ID из объекта с друзьями
+ *
+ * @param {Object} obj
+ * @return {string}
+ */
+function getIDs(obj) {
+    return (Object.keys(obj)).join(idDivider);
+}
+
+/**
+ * Синхронизирует один из объектов с друзьями с соответствующим DOM-списком друзей
+ *
+ * @param {HTMLElement} listToDrop
+ * @param {HTMLElement} draggedItem
+ */
+function syncFriendObjectsWithNodes(listToDrop, draggedItem) {
+    let id = draggedItem.dataset.id;
+
+    if (listToDrop === listAllNode) {
+        friendsInListAll[id] = friendsInListSelected[id];
+        delete friendsInListSelected[id];
+
+    } else {
+        friendsInListSelected[id] = friendsInListAll[id];
+        delete friendsInListAll[id];
     }
 }
 
-function saveClickHandler() {
-    saveIDs(listAllNode, storage.IDsInListAll);
-    saveIDs(listSelectedNode, storage.IDsInListSelected);
+/**
+ * Проверяет встречается ли подстрока chunk в строке full
+ *
+ * @param {string} full
+ * @param {string} chunk
+ * @return {boolean}
+ */
+function isMatching(full, chunk) {
+    return !!(full.match(new RegExp(chunk, 'i')));
 }
 
-function addListeners() {
-    save.addEventListener('click', saveClickHandler())
+/**
+ * Получает объект с отфильтрованными друзьями
+ *
+ * @param {Object} friendsObj
+ * @param {string} filterValue
+ * @return {Object}
+ */
+function getFilteredFriends(friendsObj, filterValue) {
+    let filteredFriends = {};
+
+    if (filterValue) {
+        for (let id in friendsObj) {
+            let friend = friendsObj[id];
+            if (friend && isMatching(friend.first_name + ' ' + friend.last_name, filterValue)) {
+                filteredFriends[id] = friend;
+            }
+        }
+    } else {
+        filteredFriends = friendsObj;
+    }
+
+    return filteredFriends;
 }
 
+/**
+ * Проверяет, соответствует ли DOM-элемент друга значению фильтра
+ *
+ * @param {HTMLElement} node
+ * @param {string} filterValue
+ * @return {boolean}
+ */
+function isFriendNodeMatchedFilterValue(node, filterValue) {
+    return isMatching(node.dataset.info, filterValue);
+}
+
+/**
+ * Отрисовывает DOM-элементы друзей
+ *
+ * @param {Object} friendsObject
+ * @param {HTMLElement} list
+ */
 function renderFriends(friendsObject, list) {
+    list.innerHTML = '';
     let itemNode;
+    let friend;
 
     for (let id in friendsObject) {
+        friend = friendsObject[id];
         itemNode = document.createElement('li');
         itemNode.classList.add('friend');
         itemNode.dataset.id = id;
-        itemNode.innerHTML = templateFn(friendsObject[id]);
+        itemNode.dataset.info = friend && friend.first_name + ' ' + friend.last_name;
+        itemNode.setAttribute('draggable', 'true');
+        itemNode.innerHTML = templateFn(friend);
         fragment.appendChild(itemNode);
     }
 
     list.appendChild(fragment);
 }
 
-function getFilteredObjectByIDs(ids, obj) {
-    var newObj = {};
-
-    ids = ids.split(' ');
-
-    ids.forEach(id => {
-        newObj[id] = obj[id];
-    });
-
-    return newObj;
-}
-
+/**
+ * Отрисовывает списки с друзьями
+ *
+ * @param {Object} friendsObject
+ */
 function renderLists(friendsObject) {
     if (!storage.IDsInListAll && !storage.IDsInListSelected) {
-        renderFriends(friendsObject, listAllNode);
-        return;
+        friendsInListAll = friendsObject;
+    } else {
+        friendsInListAll = getSavedFriendObjects(storage.IDsInListAll, friendsObject);
+        friendsInListSelected = getSavedFriendObjects(storage.IDsInListSelected, friendsObject);
+
+        renderFriends(friendsInListSelected, listSelectedNode);
     }
 
-    const friendsInListAll = getFilteredObjectByIDs(storage.IDsInListAll, friendsObject);
-    const friendsInListSelected = getFilteredObjectByIDs(storage.IDsInListSelected, friendsObject);
-
     renderFriends(friendsInListAll, listAllNode);
-    renderFriends(friendsInListSelected, listSelectedNode);
+}
+
+/**
+ * Навешивает обработчики drag-n-drop
+ *
+ * @param {HTMLElement} node
+ */
+function addDragNDropListeners(node) {
+    node.addEventListener('dragstart', event => {
+         if (event.target.tagName.toLowerCase() === 'li') {
+             draggedItem = event.target;
+             event.dataTransfer.setData('text/plain', event.target.dataset.id);
+         }
+    });
+
+    node.addEventListener('dragover', event => {
+        event.preventDefault();
+        return false;
+    });
+
+    node.addEventListener('drop', event => {
+        let target = event.target;
+        let isListItemTag = target.tagName.toLowerCase() === 'li';
+        let isListTag = target.tagName.toLowerCase() === 'ul';
+        let listToDrop;
+        let currentFilter;
+
+        if (isListItemTag || isListTag) {
+            listToDrop = isListItemTag ? target.parentNode : target;
+
+            currentFilter = isListItemTag ?
+                (target.parentNode.previousElementSibling).querySelector('input') :
+                (target.previousElementSibling).querySelector('input');
+
+            if (!currentFilter.value || currentFilter.value && isFriendNodeMatchedFilterValue(draggedItem, currentFilter.value)) {
+                listToDrop.appendChild(draggedItem);
+                syncFriendObjectsWithNodes(listToDrop, draggedItem);
+            }
+        }
+    });
+
+    node.addEventListener('dragenter', event => {
+        event.preventDefault();
+    });
+
+    node.addEventListener('dragleave', event => {
+        event.preventDefault();
+    });
+}
+
+/** @param {Event} event*/
+function saveClickHandler(event) {
+    storage.IDsInListAll = getIDs(friendsInListAll);
+    storage.IDsInListSelected = getIDs(friendsInListSelected);
+}
+
+/** @param {Event} event*/
+function filterKeyupHandler(event) {
+    if (event.target === filterAllNode) {
+        filteredFriends = getFilteredFriends(friendsInListAll, event.target.value);
+        renderFriends(filteredFriends, listAllNode);
+    }
+
+    if (event.target === filterSelectedNode) {
+        filteredFriends = getFilteredFriends(friendsInListSelected, event.target.value);
+        renderFriends(filteredFriends, listSelectedNode);
+    }
+}
+
+/** @param {Event} event*/
+function toggleClickHandler(event) {
+    if (event.target.tagName.toLowerCase() === 'button') {
+        let currentItem = event.target.parentNode;
+        let newSection = currentItem.parentNode.parentNode.nextElementSibling ||
+            currentItem.parentNode.parentNode.previousElementSibling;
+        let newList = newSection.querySelector('ul');
+        let filter = (newList.parentNode.previousElementSibling).querySelector('input');
+        let filterValue = filter.value;
+
+        if (!filterValue || filterValue && isFriendNodeMatchedFilterValue(currentItem, filterValue)) {
+            newList.appendChild(currentItem);
+            syncFriendObjectsWithNodes(newList, currentItem);
+        }
+    }
+}
+
+/**
+ * Инициализирует навешивание всех обработчиков
+ */
+function addListeners() {
+    saveBtnNode.addEventListener('click', saveClickHandler);
+    addDragNDropListeners(popupNode);
+    filterAllNode.addEventListener('keyup', filterKeyupHandler);
+    filterSelectedNode.addEventListener('keyup', filterKeyupHandler);
+    contentNode.addEventListener('click', toggleClickHandler);
 }
 
 new Promise(function(resolve) {
@@ -142,12 +338,3 @@ new Promise(function(resolve) {
     .then(friendsObject => renderLists(friendsObject))
     .then(() => addListeners())
     .catch(e => alert(e.message));
-
-
-// 1. авторизация
-// 2. дергаем с сервера
-// 3. преобразовать в объект
-// 4. рисуем в соответствие с размещенными айдишниками
-// 5. навешиваем слушатели на крестики, драг-н-дроп
-// 6. при перемещении таскаем ноды
-// 7. при сохранении формируем 2 листа с айдишниками
