@@ -234,6 +234,23 @@ function renderLists(friendsObject) {
 }
 
 /**
+ * Перемещает друга из списка в список — объектов и DOM-представлений, в зависимости от значения фильтра
+ *
+ * @param {HTMLElement} friend
+ * @param {HTMLElement} targetList
+ * @param {string} filterValue
+ */
+function moveFriend(friend, targetList, filterValue) {
+    if (!filterValue || filterValue && isFriendNodeMatchedFilterValue(friend, filterValue)) {
+        targetList.appendChild(friend);
+    } else {
+        friend.remove();
+    }
+
+    syncFriendObjectsWithNodes(targetList, friend);
+}
+
+/**
  * Навешивает обработчики drag-n-drop
  *
  * @param {HTMLElement} node
@@ -265,10 +282,7 @@ function addDragNDropListeners(node) {
                 (target.parentNode.previousElementSibling).querySelector('input') :
                 (target.previousElementSibling).querySelector('input');
 
-            if (!currentFilter.value || currentFilter.value && isFriendNodeMatchedFilterValue(draggedItem, currentFilter.value)) {
-                listToDrop.appendChild(draggedItem);
-                syncFriendObjectsWithNodes(listToDrop, draggedItem);
-            }
+            moveFriend(draggedItem, listToDrop, currentFilter.value);
         }
     });
 
@@ -307,13 +321,9 @@ function toggleClickHandler(event) {
         let newSection = currentItem.parentNode.parentNode.nextElementSibling ||
             currentItem.parentNode.parentNode.previousElementSibling;
         let newList = newSection.querySelector('ul');
-        let filter = (newList.parentNode.previousElementSibling).querySelector('input');
-        let filterValue = filter.value;
+        let filter = (newList.parentNode).querySelector('input');
 
-        if (!filterValue || filterValue && isFriendNodeMatchedFilterValue(currentItem, filterValue)) {
-            newList.appendChild(currentItem);
-            syncFriendObjectsWithNodes(newList, currentItem);
-        }
+        moveFriend(currentItem, newList, filter.value);
     }
 }
 
