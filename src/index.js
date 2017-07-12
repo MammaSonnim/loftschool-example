@@ -1,62 +1,233 @@
-var Model = require('./model');
-var View = require('./view');
-var Router = require('./router');
-var geoObjectsMock = Model.geoObjects.list;
+var map;
+var clusterer;
+// избавиться от замыканий coords и address
+var coords;
+var address;
+var balloonTemplate = require('./templates/balloon.js');
+var clusterItemTemplate = require('./templates/cluster-item.js');
+const storage = localStorage;
 
-var reviewsMap = Model.map;
+// добавить сохранение в лс
 
-function getReview() {
-    return {
-        author: 'Влад',
-        place: 'Чайхона',
-        date: '23324244424',
-        text: 'Сойдет!'
+class GeoObjects {
+    constructor() {
+        this.list = []
+    }
+
+    addGeoObject(geoObject) {
+        this.list.push(geoObject)
+    }
+
+    saveToStorage() {
+        storage.geoObjects = this.list;
+    }
+
+    loadFromStorage() {
+        // let objs = storage.geoObjects.split(divider)
     }
 }
 
+var geoObjects = new GeoObjects();
+
+
+class GeoObject {
+    constructor(address) {
+        this.address = address;
+        this.reviews = [];
+    }
+
+    addReview(review) {
+        this.reviews.push(review);
+    }
+}
+
+class Review {
+    constructor(config) {
+        this.author = config.author;
+        this.place = config.place;
+        this.text = config.text;
+        this.date =  config.date;
+    }
+}
+
+function getCurrentGeoObject(address) {
+    return geoObjects[address];
+}
+
+function createReview(that) {
+    let reviewConfig = getValues();
+
+    if (!reviewConfig.text) {
+        return;
+    }
+    // можно поменять на dataset
+    let address = that._data.properties.address;
+    let review = new Review(reviewConfig);
+    let thisGeoObject = getCurrentGeoObject(address);
+
+    if (!thisGeoObject) {
+        thisGeoObject = new GeoObject(address);
+        thisGeoObject.addReview(review);
+    } else {
+        thisGeoObject.reviews.push(review);
+    }
+
+    createPlacemark(review, coords, address);
+}
+
+function getContentLayout() {
+    var contentLayout = ymaps.templateLayoutFactory.createClass(balloonTemplate, {
+        build: function () {
+            contentLayout.superclass.build.call(this);
+            const submit = document.querySelector('#submit');
+            submit.addEventListener('click', this.submitClickHandler.bind(this));
+
+            console.log(this)
+
+        },
+        clear: function () {
+            const submit = document.querySelector('#submit');
+            submit.removeEventListener('click', this.submitClickHandler.bind(this));
+            contentLayout.superclass.clear.call(this);
+        },
+
+        submitClickHandler: function (e) {
+            e.preventDefault();
+            createReview(this);
+        }
+    });
+
+    return contentLayout;
+}
+
+function createPlacemark(review, coords, address) {
+    var placemark = new ymaps.Placemark(coords, {
+        address: address,
+        author: review.author,
+        place: review.place,
+        text: review.text,
+        date:  review.date
+    });
+
+    clusterer.add(placemark);
+}
+
+function getValues() {
+    const formNode = document.querySelector('#form');
+    const nameInputNode = formNode.querySelector('#name');
+    const placeInputNode = formNode.querySelector('#place');
+    const textInputNode = formNode.querySelector('#text');
+
+    return {
+        author: nameInputNode.value || 'Неопознанный енот',
+        place: placeInputNode.value || 'Здесь',
+        text: textInputNode.value || 'Временно',
+        date: new Date()
+    };
+}
+
+
+function openBalloon() {
+    return map.balloon.open(coords, {
+        properties: {
+            address: address
+        }
+    }, {
+        contentLayout: getContentLayout()
+    })
+}
+
+function addBalloon(coords) {
+    ymaps.geocode(coords)
+        .then((res) => {
+            var firstGeoObject = res.geoObjects.get(0);
+            address = firstGeoObject.getAddressLine();
+
+            return address;
+        })
+        .then(address => {
+            return map.balloon.open(coords, {
+                properties: {
+                    address: address
+                }
+            }, {
+                contentLayout: getContentLayout()
+            });
+                // .then(() => {
+                //     return address;
+                // })
+        })
+}
+
+function mapClickHandler(e) {
+    coords = e.get('coords');
+    addBalloon(coords);
+}
+
+function addClusterer() {
+    var renderClusterItem = ymaps.templateLayoutFactory.createClass(clusterItemTemplate, {
+        // детали здесь https://tech.yandex.ru/maps/jsbox/2.1/placemark_balloon_layout
+        build: function () {
+            renderClusterItem.superclass.build.call(this);
+
+            const link = document.querySelector('.address');
+            link.addEventListener('click', this.linkClickHandler);
+        },
+        clear: function () {
+            const link = document.querySelector('.address');
+            link.removeEventListener('click', this.linkClickHandler);
+            renderClusterItem.superclass.clear.call(this);
+        },
+
+        linkClickHandler: function (e) {
+            e.preventDefault();
+
+            openBalloon();
+        }
+
+    });
+
+    clusterer = new ymaps.Clusterer({
+        clusterDisableClickZoom: true,
+        clusterOpenBalloonOnClick: true,
+        clusterBalloonContentLayout: 'cluster#balloonCarousel',
+        clusterBalloonItemContentLayout: renderClusterItem,
+        clusterBalloonPanelMaxMapArea: 0,
+        clusterBalloonContentLayoutWidth: 200,
+        clusterBalloonContentLayoutHeight: 130,
+        clusterBalloonPagerSize: 5,
+        geoObjectBalloonContentLayout: getContentLayout(),
+        // geoObjectBalloonPanelMaxMapArea: 0
+
+    });
+
+    map.geoObjects.add(clusterer);
+}
+
 function initMap() {
-    return new Promise(function(resolve, reject) {
-        ymaps.ready(function () {
-            var mapCenter = [55.755381, 37.619044];
-            reviewsMap = new ymaps.Map('map', {
-                center: mapCenter,
-                zoom: 9,
-                controls: []
-            });
+    ymaps.ready(function() {
+        var mapCenter = [55.755381, 37.619044];
+        let savedGeoObjects = storage.geoObjects;
 
-            var clusterer = new ymaps.Clusterer({
-                clusterDisableClickZoom: true,
-                clusterOpenBalloonOnClick: true,
-                clusterBalloonContentLayout: 'cluster#balloonCarousel',
-                clusterBalloonItemContentLayout: View.renderBalloonContent(),
-                clusterBalloonPanelMaxMapArea: 0,
-                clusterBalloonContentLayoutWidth: 200,
-                clusterBalloonContentLayoutHeight: 130,
-                clusterBalloonPagerSize: 5
-            });
-
-            var a = geoObjectsMock.map(item => {
-                return ymaps.geocode(item.address).then(res => {
-                    var firstGeoObject = res.geoObjects.get(0);
-                    return firstGeoObject.geometry.getCoordinates()
-                }).then(coords => View.createPlacemarks(item.reviews, coords))
-            });
-
-            // function renderPlacemarks() {
-            //     clusterer.add(View.placemarks);
-            //     reviewsMap.geoObjects.add(clusterer);
-            //     clusterer.balloon.open(clusterer.getClusters()[0]);
-            // }
-
-            Promise.all(a)
-                .then(() => {
-                        View.renderPlacemarks();
-                        resolve();
-                    },
-                error => {
-
-                })
+        map = new ymaps.Map('map', {
+            center: mapCenter,
+            zoom: 9,
+            controls: []
         });
+
+        map.events.add('click', function(e) {
+            mapClickHandler(e);
+        });
+
+        addClusterer();
+
+        if (savedGeoObjects) {
+            savedGeoObjects.forEach(geoObject => {
+                geoObject.reviews.forEach(review => {
+                    createPlacemark(review, geoObject.coords, geoObject.address)
+                })
+            })
+        }
     });
 }
 
@@ -66,42 +237,6 @@ new Promise(function(resolve) {
     .then(function() {
         return initMap();
     })
-    .then(function() {
-        reviewsMap.events.add('click', function(e) {
-            if (!reviewsMap.balloon.isOpen()) {
-                var coords = e.get('coords');
-
-                var review = getReview();
-
-                View.renderPlacemark(review, coords);
-
-                reviewsMap.balloon.open(coords, {
-                    contentHeader: review.author,
-                    contentBody:'<p>Кто-то щелкнул по карте.</p>' +
-                    '<p>Координаты щелчка: ' + [
-                        coords[0].toPrecision(6),
-                        coords[1].toPrecision(6)
-                    ].join(', ') + '</p>',
-                    contentFooter:'<sup>Щелкните еще раз</sup>'
-                });
-            }
-            else {
-                reviewsMap.balloon.close();
-            }
-        })
-    })
-    // .then(function() {
-    //     return Model.getUser().then(function(users) {
-    //         header.innerHTML = View.renderHeader(users[0]);
-    //     });
-    // })
-    // .then(function() {
-    //     var friendsButton = document.querySelector('#friendsPage');
-    //     var newsButton = document.querySelector('#newsPage');
-    //
-    //     friendsButton.addEventListener('click', () => Router.handle('friends'));
-    //     newsButton.addEventListener('click', () => Router.handle('news'))
-    // })
     .catch(function(e) {
         console.error(e);
         alert('Ошибка: ' + e.message);

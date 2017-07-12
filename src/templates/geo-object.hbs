@@ -5,7 +5,11 @@
     </header>
 
     <div class="geo-object__reviews-wrapper">
-        {{> "./reviews.hbs"}}
+        {{#if reviews}}
+            {{> "./reviews.hbs"}}
+        {{else}}
+            Отзывов пока нет...
+        {{/if}}
     </div>
 
     <hr>

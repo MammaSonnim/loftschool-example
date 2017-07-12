@@ -1,6 +1,6 @@
 var geoObjectsMock = [
     {
-        address: 'Москва, ул. Льва Толстого, 16',
+        address: 'Москва, ул. Беломорская, 18',
         reviews: [
             {
                 author: 'Андрей',
@@ -17,7 +17,7 @@ var geoObjectsMock = [
         ]
     },
     {
-        address: 'Москва, ул. Льва Толстого, 26',
+        address: 'Москва, ул. Лесная, 7',
         reviews: [
             {
                 author: 'Андрей',
@@ -30,6 +30,17 @@ var geoObjectsMock = [
                 place: 'Dominos',
                 date: '232424234324',
                 text: 'Плохо!'
+            }
+        ]
+    },
+    {
+        address: 'Москва, ул. Ленина, 7',
+        reviews: [
+            {
+                author: 'Андрей',
+                place: 'Papa Johns',
+                date: '23324244424',
+                text: 'Отлично!'
             }
         ]
     },
@@ -57,6 +68,15 @@ class GeoObject {
     getReviews() {
         return this.reviews;
     }
+
+    getReview(config) {
+        return {
+            author: config.author,
+            place: config.place,
+            date: config.date,
+            text: config.text
+        }
+    }
 }
 
 var geoObjects = {
@@ -65,7 +85,7 @@ var geoObjects = {
         return this.items;
     },
     add(geoObject) {
-        this.items.push(geoObject);
+        this.list.push(geoObject);
         // save to ls
     }
 };

@@ -1,14 +1,15 @@
-var geoObjectTemplate = require('./templates/geo-object.hbs');
+var geoObjectTemplate = require('./templates/geo-object.js');
 var reviewsTemplate = require('./templates/reviews.hbs');
 var reviewTemplate = require('./templates/review.hbs');
-var balloonContentTemplate = require('./templates/balloon-content.js');
+var clusterItemTemplate = require('./templates/cluster-item.js');
+// var balloonContentTemplate = require('./templates/balloon-content.js');
 var mapNode;
 var closeBtnNode;
 var submitBtnNode;
+var now = Date.now();
 
 module.exports = {
     placemarks: [],
-    map: null,
     renderReview(data) {
         return reviewTemplate(data);
     },
@@ -18,47 +19,23 @@ module.exports = {
     renderGeoObject(data) {
         return geoObjectTemplate(data);
     },
-    renderBalloonContent(data) {
-      return balloonContentTemplate(data);
+    renderClusterItem(data) {
+        return ymaps.templateLayoutFactory.createClass(
+            '<h2 class="piu">{{ properties.address|raw }} ура!</h2>'
+        )
     },
-    renderCarousel(data) {
+    getValues() {
+        var formNode = document.querySelector('form');
+        var nameInputNode = formNode.querySelector('#name');
+        var placeInputNode = formNode.querySelector('#place');
+        var textInputNode = formNode.querySelector('#text');
 
-    },
-    renderPlacemark(review, coords) {
-        return new ymaps.Placemark(coords, {
-            balloonContentHeader: review.place,
-            balloonContentBody: review.text,
-            balloonContentFooter:  review.date
-        });
-    },
-    createPlacemarks(reviews, coords) {
-        var placemark;
-
-        reviews.forEach(review => {
-            placemark = this.renderPlacemark(review, coords);
-
-            this.placemarks.push(placemark);
-        });
-    },
-    renderPlacemarks() {
-        console.dir(clusterer.add)
-        clusterer.add(this.placemarks);
-        this.map.geoObjects.add(clusterer);
-        clusterer.balloon.open(clusterer.getClusters()[0]);
-    },
-    renderMap(data) {
-
-    },
-
-    mapClickHandler(e) {
-
-    },
-    closeBtnClickHandler(e) {
-        e.preventDefault();
-    },
-    submitBtnClickHandler(e) {
-        e.preventDefault();
-
-        var a = document.querySelector()
+        return {
+            author: nameInputNode.value,
+            place: placeInputNode.value,
+            date: now,
+            text: textInputNode.value
+        };
     }
+
 };
