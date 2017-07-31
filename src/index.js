@@ -7,7 +7,9 @@ var balloonTemplate = require('./templates/balloon.js');
 var clusterItemTemplate = require('./templates/cluster-item.js');
 const storage = localStorage;
 
-// добавить сохранение в лс
+// save in ls when close, not when add review
+// draw reviews in open window
+// fix open window bounds, maybe problem with coords
 
 class GeoObjects {
     constructor() {
@@ -19,19 +21,20 @@ class GeoObjects {
     }
 
     saveToStorage() {
-        storage.geoObjects = this.list;
+        storage.geoObjects = JSON.stringify(this.list);
     }
 
     loadFromStorage() {
         // let objs = storage.geoObjects.split(divider)
+        return JSON.parse(storage);
     }
 }
 
 var geoObjects = new GeoObjects();
 
-
 class GeoObject {
-    constructor(address) {
+    constructor(coords, address) {
+        this.coords = coords;
         this.address = address;
         this.reviews = [];
     }
@@ -46,7 +49,7 @@ class Review {
         this.author = config.author;
         this.place = config.place;
         this.text = config.text;
-        this.date =  config.date;
+        this.date = config.date;
     }
 }
 
@@ -54,20 +57,24 @@ function getCurrentGeoObject(address) {
     return geoObjects[address];
 }
 
-function createReview(that) {
+function createReview(layout) {
     let reviewConfig = getValues();
 
     if (!reviewConfig.text) {
         return;
     }
     // можно поменять на dataset
-    let address = that._data.properties.address;
+    let coords = layout._data.properties.coords;
+    let address = layout._data.properties.address;
     let review = new Review(reviewConfig);
     let thisGeoObject = getCurrentGeoObject(address);
 
     if (!thisGeoObject) {
-        thisGeoObject = new GeoObject(address);
+        thisGeoObject = new GeoObject(coords, address);
         thisGeoObject.addReview(review);
+
+        geoObjects.addGeoObject(thisGeoObject);
+        geoObjects.saveToStorage()
     } else {
         thisGeoObject.reviews.push(review);
     }
@@ -81,9 +88,6 @@ function getContentLayout() {
             contentLayout.superclass.build.call(this);
             const submit = document.querySelector('#submit');
             submit.addEventListener('click', this.submitClickHandler.bind(this));
-
-            console.log(this)
-
         },
         clear: function () {
             const submit = document.querySelector('#submit');
@@ -106,7 +110,7 @@ function createPlacemark(review, coords, address) {
         author: review.author,
         place: review.place,
         text: review.text,
-        date:  review.date
+        date: review.date
     });
 
     clusterer.add(placemark);
@@ -126,10 +130,11 @@ function getValues() {
     };
 }
 
-
+// address — замыкание?
 function openBalloon() {
     return map.balloon.open(coords, {
         properties: {
+            coords: coords,
             address: address
         }
     }, {
@@ -148,14 +153,12 @@ function addBalloon(coords) {
         .then(address => {
             return map.balloon.open(coords, {
                 properties: {
+                    coords: coords,
                     address: address
                 }
             }, {
                 contentLayout: getContentLayout()
             });
-                // .then(() => {
-                //     return address;
-                // })
         })
 }
 
@@ -205,7 +208,7 @@ function addClusterer() {
 }
 
 function initMap() {
-    ymaps.ready(function() {
+    ymaps.ready(function () {
         var mapCenter = [55.755381, 37.619044];
         let savedGeoObjects = storage.geoObjects;
 
@@ -215,14 +218,17 @@ function initMap() {
             controls: []
         });
 
-        map.events.add('click', function(e) {
+        map.events.add('click', function (e) {
             mapClickHandler(e);
         });
 
         addClusterer();
 
         if (savedGeoObjects) {
-            savedGeoObjects.forEach(geoObject => {
+            var saved = JSON.parse(savedGeoObjects);
+            debugger
+
+            saved.forEach(geoObject => {
                 geoObject.reviews.forEach(review => {
                     createPlacemark(review, geoObject.coords, geoObject.address)
                 })
@@ -231,13 +237,13 @@ function initMap() {
     });
 }
 
-new Promise(function(resolve) {
+new Promise(function (resolve) {
     window.onload = resolve;
 })
-    .then(function() {
+    .then(function () {
         return initMap();
     })
-    .catch(function(e) {
+    .catch(function (e) {
         console.error(e);
         alert('Ошибка: ' + e.message);
     });
