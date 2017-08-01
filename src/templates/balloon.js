@@ -2,7 +2,7 @@ module.exports = '' +
     '<section class="geo-object" id="geo-object" data-address="{{ properties.address }}">' +
         '<header>' +
             '<h2 class="geo-object__address">{{ properties.address }}</h2>' +
-            '<button class="geo-object__close">Закрыть</button>' +
+            '<button class="geo-object__close" id="close">Закрыть</button>' +
         '</header>' +
 
         '<div class="geo-object__reviews-wrapper">' +

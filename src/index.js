@@ -6,18 +6,33 @@ var address;
 var balloonTemplate = require('./templates/balloon.js');
 var clusterItemTemplate = require('./templates/cluster-item.js');
 const storage = localStorage;
+let id = 0;
 
-// save in ls when close, not when add review
+// save in ls when close, not when add review - done
+// save right structure - done
+// draw geoObjects on init - done
+// save diff geoObjects - done
 // draw reviews in open window
-// fix open window bounds, maybe problem with coords
+// add ids instead address
+// fix open window bounds, maybe problem with coords (clear ls)
+// use let / const instead of vars
+// Object.entries() instead of for-in
+// save data to dataset
+// get rid of closures
+// make templates not js
+// export trouble
+// create modules
+// make pp-layout
 
 class GeoObjects {
     constructor() {
-        this.list = []
+        this.list = {};
+        this.loadFromStorage();
     }
 
     addGeoObject(geoObject) {
-        this.list.push(geoObject)
+        this.list[address] = geoObject;
+        // id++;
     }
 
     saveToStorage() {
@@ -25,8 +40,9 @@ class GeoObjects {
     }
 
     loadFromStorage() {
-        // let objs = storage.geoObjects.split(divider)
-        return JSON.parse(storage);
+        if (storage.geoObjects) {
+            this.list = JSON.parse(storage.geoObjects);
+        }
     }
 }
 
@@ -54,7 +70,7 @@ class Review {
 }
 
 function getCurrentGeoObject(address) {
-    return geoObjects[address];
+    return geoObjects.list[address];
 }
 
 function createReview(layout) {
@@ -64,17 +80,21 @@ function createReview(layout) {
         return;
     }
     // можно поменять на dataset
-    let coords = layout._data.properties.coords;
-    let address = layout._data.properties.address;
+    var data = layout._data.properties;
+
+    let coords = data.coords || (data._data && data._data.coords);
+    let address = data.address || (data._data && data._data.address);
     let review = new Review(reviewConfig);
+
     let thisGeoObject = getCurrentGeoObject(address);
+
+    debugger
 
     if (!thisGeoObject) {
         thisGeoObject = new GeoObject(coords, address);
         thisGeoObject.addReview(review);
 
         geoObjects.addGeoObject(thisGeoObject);
-        geoObjects.saveToStorage()
     } else {
         thisGeoObject.reviews.push(review);
     }
@@ -86,8 +106,12 @@ function getContentLayout() {
     var contentLayout = ymaps.templateLayoutFactory.createClass(balloonTemplate, {
         build: function () {
             contentLayout.superclass.build.call(this);
+            
             const submit = document.querySelector('#submit');
+            const close = document.querySelector('#close');
+            
             submit.addEventListener('click', this.submitClickHandler.bind(this));
+            close.addEventListener('click', this.closeClickHandler.bind(this));
         },
         clear: function () {
             const submit = document.querySelector('#submit');
@@ -98,6 +122,11 @@ function getContentLayout() {
         submitClickHandler: function (e) {
             e.preventDefault();
             createReview(this);
+        },
+        closeClickHandler: function (e) {
+            e.preventDefault();
+            geoObjects.saveToStorage();
+            console.log(storage)
         }
     });
 
@@ -106,6 +135,7 @@ function getContentLayout() {
 
 function createPlacemark(review, coords, address) {
     var placemark = new ymaps.Placemark(coords, {
+        coords: coords,
         address: address,
         author: review.author,
         place: review.place,
@@ -207,10 +237,26 @@ function addClusterer() {
     map.geoObjects.add(clusterer);
 }
 
+function createPlacemarks() {
+    var list = geoObjects.list;
+
+    if (Object.keys(list).length !== 0 && list.constructor === Object) {
+        for (var prop in list) {
+            if (list.hasOwnProperty(prop)) {
+                var geoObject = list[prop];
+
+                geoObject.reviews.forEach(review => {
+                    createPlacemark(review, geoObject.coords, geoObject.address)
+                })
+            }
+        }
+    }
+
+}
+
 function initMap() {
     ymaps.ready(function () {
         var mapCenter = [55.755381, 37.619044];
-        let savedGeoObjects = storage.geoObjects;
 
         map = new ymaps.Map('map', {
             center: mapCenter,
@@ -223,17 +269,7 @@ function initMap() {
         });
 
         addClusterer();
-
-        if (savedGeoObjects) {
-            var saved = JSON.parse(savedGeoObjects);
-            debugger
-
-            saved.forEach(geoObject => {
-                geoObject.reviews.forEach(review => {
-                    createPlacemark(review, geoObject.coords, geoObject.address)
-                })
-            })
-        }
+        createPlacemarks();
     });
 }
 
