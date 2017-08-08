@@ -4,19 +4,23 @@
 // save diff geoObjects - done
 // get rid of closures - done
 // use let / const instead of vars - done
+// draw reviews in open window - done
+// close when click on close - done
+// draw review when submit - done
+// render reviews when open single placemark - done
 
-// draw reviews in open window
+// problem with getData on balloon
 
-// keep date in one format
-// save in ls when close in any way
-// add ids instead address
-// fix open window bounds, maybe problem with coords (clear ls)
-// Object.entries() instead of for-in
-// save data to dataset
-// make templates not js
-// export trouble
-// create modules
 // make pp-layout
+// save in ls when close in any way
+// keep date in one format
+// add ids instead address counter
+// create modules
+// export trouble
+// Object.entries() instead of for-in
+// make templates not js
+// save data to dataset
+// fix open window bounds, maybe problem with coords (clear ls)
 let map;
 let clusterer;
 const balloonTemplate = require('./templates/balloon.js');
@@ -31,7 +35,7 @@ class GeoObjects {
         this.loadFromStorage();
     }
 
-    addGeoObject(geoObject) {
+    addGeoObject(geoObject, address) {
         this.list[address] = geoObject;
         // id++;
     }
@@ -76,16 +80,17 @@ function getCurrentGeoObject(address) {
     return geoObjects.list[address];
 }
 
-function createReview(layout) {
+function createReview() {
     let reviewConfig = getValues();
 
     if (!reviewConfig.text) {
         return;
     }
-    // можно поменять на dataset
-    let data = layout._data.properties;
-    let coords = data.coords || (data._data && data._data.coords);
-    let address = data.address || (data._data && data._data.address);
+
+    let balloonData = map.balloon.getData();
+    let data = balloonData.properties;
+    let coords = data.coords || data._data.coords;
+    let address = data.address || data._data.address;
     let review = new Review(reviewConfig);
     let thisGeoObject = getCurrentGeoObject(address);
 
@@ -93,12 +98,22 @@ function createReview(layout) {
         thisGeoObject = new GeoObject(coords, address);
         thisGeoObject.addReview(review);
 
-        geoObjects.addGeoObject(thisGeoObject);
+        geoObjects.addGeoObject(thisGeoObject, address);
+
     } else {
         thisGeoObject.reviews.push(review);
     }
-
+    let updatedData = {};
+    updatedData.properties = thisGeoObject;
     createPlacemark(review, coords, address);
+    debugger
+
+    if (data.coords) {
+        map.balloon.setData(updatedData);
+    } else {
+        // map.balloon._balloon.setData(updatedData);
+    }
+
 }
 
 function getContentLayout() {
@@ -120,12 +135,13 @@ function getContentLayout() {
 
         submitClickHandler: function (e) {
             e.preventDefault();
-            createReview(this);
+            createReview();
         },
         closeClickHandler: function (e) {
             e.preventDefault();
+
+            map.balloon.close();
             geoObjects.saveToStorage();
-            console.log(storage)
         }
     });
 
@@ -136,10 +152,12 @@ function createPlacemark(review, coords, address) {
     const placemark = new ymaps.Placemark(coords, {
         coords: coords,
         address: address,
-        author: review.author,
-        place: review.place,
-        text: review.text,
-        date: review.date
+        review: {
+            author: review.author,
+            place: review.place,
+            text: review.text,
+            date: review.date,
+        }
     });
 
     clusterer.add(placemark);
@@ -159,11 +177,12 @@ function getValues() {
     };
 }
 
-function openBalloon(coords, address) {
+function openBalloon(coords, address, reviews='') {
     return map.balloon.open(coords, {
         properties: {
             coords: coords,
-            address: address
+            address: address,
+            reviews: reviews
         }
     }, {
         contentLayout: getContentLayout()
@@ -181,7 +200,7 @@ function addBalloonWithoutGeoObject(coords) {
         })
 }
 
-function addClusterer() {
+function getClusterLayout() {
     const renderClusterItem = ymaps.templateLayoutFactory.createClass(clusterItemTemplate, {
         // детали здесь https://tech.yandex.ru/maps/jsbox/2.1/placemark_balloon_layout
         build: function () {
@@ -193,30 +212,33 @@ function addClusterer() {
         clear: function () {
             const link = document.querySelector('.address');
             link.removeEventListener('click', this.linkClickHandler.bind(this));
+
             renderClusterItem.superclass.clear.call(this);
         },
 
         linkClickHandler: function (e) {
             e.preventDefault();
-            debugger
+            // заменить дата на getClustererData
             const data = this._data.properties._data;
-            openBalloon(data.coords, data.address);
+            openBalloon(data.coords, data.address, geoObjects.list[data.address].reviews);
         }
 
     });
 
+    return renderClusterItem;
+}
+
+function addClusterer() {
     clusterer = new ymaps.Clusterer({
         clusterDisableClickZoom: true,
         clusterOpenBalloonOnClick: true,
         clusterBalloonContentLayout: 'cluster#balloonCarousel',
-        clusterBalloonItemContentLayout: renderClusterItem,
+        clusterBalloonItemContentLayout: getClusterLayout(),
         clusterBalloonPanelMaxMapArea: 0,
         clusterBalloonContentLayoutWidth: 200,
         clusterBalloonContentLayoutHeight: 130,
         clusterBalloonPagerSize: 5,
-        geoObjectBalloonContentLayout: getContentLayout(),
-        // geoObjectBalloonPanelMaxMapArea: 0
-
+        geoObjectBalloonContentLayout: getContentLayout()
     });
 
     map.geoObjects.add(clusterer);

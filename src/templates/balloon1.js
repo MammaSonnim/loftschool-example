@@ -6,18 +6,14 @@ module.exports = '' +
         '</header>' +
 
         '<ul class="geo-object__reviews-wrapper">' +
-        '{% if properties.reviews %}' +
-            '{% for review in properties.reviews %}' +
-                '<li>{{ review.text }}</li>' +
-            '{% endfor %}' +
-        '{% elseif properties.review %}' +
-            '<li>{{ properties.review.text }}</li>' +
+        '{% if properties.review %}' +
+            '<li>{{ properties.review }}</li>' +
         '{% else %}' +
             'Отзывов нет..' +
         '{% endif %}' +
         '</ul>' +
 
-        '<hr>' +'<hr>' +
+        '<hr>' +
 
         '<form action="" class="geo-object__form form" id="form">' +
             '<input type="text" class="form__field field field_name" id="name">' +
