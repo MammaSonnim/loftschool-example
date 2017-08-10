@@ -8,10 +8,10 @@
 // close when click on close - done
 // draw review when submit - done
 // render reviews when open single placemark - done
-
-// problem with getData on balloon
+// problem with getData on balloon - done
 
 // make pp-layout
+
 // save in ls when close in any way
 // keep date in one format
 // add ids instead address counter
@@ -89,8 +89,8 @@ function createReview() {
 
     let balloonData = map.balloon.getData();
     let data = balloonData.properties;
-    let coords = data.coords || data._data.coords;
-    let address = data.address || data._data.address;
+    let coords = data.coords;
+    let address = data.address;
     let review = new Review(reviewConfig);
     let thisGeoObject = getCurrentGeoObject(address);
 
@@ -106,14 +106,10 @@ function createReview() {
     let updatedData = {};
     updatedData.properties = thisGeoObject;
     createPlacemark(review, coords, address);
-    debugger
 
     if (data.coords) {
         map.balloon.setData(updatedData);
-    } else {
-        // map.balloon._balloon.setData(updatedData);
     }
-
 }
 
 function getContentLayout() {
@@ -129,7 +125,11 @@ function getContentLayout() {
         },
         clear: function () {
             const submit = document.querySelector('#submit');
+            const close = document.querySelector('#close');
+
             submit.removeEventListener('click', this.submitClickHandler.bind(this));
+            close.removeEventListener('click', this.closeClickHandler.bind(this));
+
             contentLayout.superclass.clear.call(this);
         },
 
@@ -153,13 +153,23 @@ function createPlacemark(review, coords, address) {
         coords: coords,
         address: address,
         review: {
-            author: review.author,
+            piu: review.author,
             place: review.place,
             text: review.text,
             date: review.date,
-        }
+        },
+    }, {
+        // отключаем родной balloon, чтобы показывать map.balloon
+        hasBalloon: false
     });
 
+    // if (!clusterer._objectsCounter) {  добавить проверку новый ли это placemark или нет
+        placemark.events.add('click', function () {
+            openBalloon(coords, address, geoObjects.list[address].reviews);
+        });
+    // }
+
+    // т.е. если использовать родной balloon, при добавлении в clusterer, он будет изсчезать вместе с placemark
     clusterer.add(placemark);
 }
 
