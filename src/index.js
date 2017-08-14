@@ -9,18 +9,18 @@
 // draw review when submit - done
 // render reviews when open single placemark - done
 // problem with getData on balloon - done
+// fix open window bounds, maybe problem with coords (clear ls) - done
 
 // make pp-layout
 
 // save in ls when close in any way
-// keep date in one format
 // add ids instead address counter
+// keep date in one format
 // create modules
 // export trouble
-// Object.entries() instead of for-in
 // make templates not js
-// save data to dataset
-// fix open window bounds, maybe problem with coords (clear ls)
+// Object.entries() instead of for-in
+// save data to dataset - realy?
 let map;
 let clusterer;
 const balloonTemplate = require('./templates/balloon.js');
@@ -153,7 +153,7 @@ function createPlacemark(review, coords, address) {
         coords: coords,
         address: address,
         review: {
-            piu: review.author,
+            author: review.author,
             place: review.place,
             text: review.text,
             date: review.date,
@@ -195,7 +195,7 @@ function openBalloon(coords, address, reviews='') {
             reviews: reviews
         }
     }, {
-        contentLayout: getContentLayout()
+        layout: getContentLayout()
     })
 }
 
@@ -216,11 +216,11 @@ function getClusterLayout() {
         build: function () {
             renderClusterItem.superclass.build.call(this);
 
-            const link = document.querySelector('.address');
+            const link = document.querySelector('#address');
             link.addEventListener('click', this.linkClickHandler.bind(this));
         },
         clear: function () {
-            const link = document.querySelector('.address');
+            const link = document.querySelector('#address');
             link.removeEventListener('click', this.linkClickHandler.bind(this));
 
             renderClusterItem.superclass.clear.call(this);
