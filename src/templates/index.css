@@ -1,9 +1,16 @@
 html, body {
     margin: 0; padding: 0;
+    box-sizing: border-box;
 }
 
 html, body, #homework-container, .container, #map {
     width: 100%; height: 100%;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
 }
 
 .cluster-item {
@@ -35,7 +42,6 @@ html, body, #homework-container, .container, #map {
 .geo-object {
     background: #fff;
     width: 300px;
-    height: 500px;
     border-radius: 10px;
 }
 
@@ -82,9 +88,10 @@ html, body, #homework-container, .container, #map {
 .geo-object__close {
     position: absolute;
     top: 13px;
-    right: 7px;
+    right: 5px;
     width: 20px;
     height: 20px;
+    padding: 0;
     font-size: 0;
     background: none;
     border: none;
@@ -110,17 +117,20 @@ html, body, #homework-container, .container, #map {
     transform: rotate(-45deg);
 }
 
-.container {
+.geo-object__main {
     padding: 15px 10px;
 }
 
-.geo-object__reviews-wrapper {
+.geo-object__reviews {
+    margin: 0 0 20px 0;
     padding: 0;
+    max-height: 150px;
+    overflow: auto;
 }
 
 .review {
     list-style: none;
-    margin: 0;
+    margin: 0 0 10px 0;
 }
 
 .review__author {
@@ -138,3 +148,40 @@ html, body, #homework-container, .container, #map {
     display: block;
 }
 
+.form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form__header {
+    font-size: 16px;
+    color: tomato;
+    text-transform: uppercase;
+    margin: 0 0 10px 0;
+}
+
+.form__field {
+    margin-bottom: 10px;
+}
+
+.field {
+    border: 2px solid lightgray;
+    border-radius: 20px;
+    padding: 5px 10px;
+}
+
+.field_oneliner {
+    height: 15px;
+}
+
+.form__btn {
+    height: 30px;
+    margin: 10px 0;
+}
+
+.btn {
+    background: tomato;
+    color: white;
+    border: none;
+    border-radius: 10px;
+}
