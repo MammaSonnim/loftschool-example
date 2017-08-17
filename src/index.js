@@ -10,10 +10,10 @@
 // render reviews when open single placemark - done
 // problem with getData on balloon - done
 // fix open window bounds, maybe problem with coords (clear ls) - done
+// make pp-layout - done
 
-// make pp-layout
+// save in ls when close in any way, save if only there is content
 
-// save in ls when close in any way
 // add ids instead address counter
 // keep date in one format
 // create modules
@@ -122,6 +122,16 @@ function getContentLayout() {
             
             submit.addEventListener('click', this.submitClickHandler.bind(this));
             close.addEventListener('click', this.closeClickHandler.bind(this));
+
+            // вместо события можно переопределить метод close, перенести в init
+            map.balloon.events.add('close', () => {
+                const dataInBalloon = this.getData();
+
+                // при очистки темлпейта сохраняем данные если отзывы есть (пока и старые и новые)
+                if (dataInBalloon.properties.reviews.length) {
+                    geoObjects.saveToStorage();
+                }
+            });
         },
         clear: function () {
             const submit = document.querySelector('#submit');
@@ -129,8 +139,6 @@ function getContentLayout() {
 
             submit.removeEventListener('click', this.submitClickHandler.bind(this));
             close.removeEventListener('click', this.closeClickHandler.bind(this));
-
-            contentLayout.superclass.clear.call(this);
         },
 
         submitClickHandler: function (e) {
@@ -139,9 +147,7 @@ function getContentLayout() {
         },
         closeClickHandler: function (e) {
             e.preventDefault();
-
             map.balloon.close();
-            geoObjects.saveToStorage();
         }
     });
 
@@ -163,13 +169,11 @@ function createPlacemark(review, coords, address) {
         hasBalloon: false
     });
 
-    // if (!clusterer._objectsCounter) {  добавить проверку новый ли это placemark или нет
-        placemark.events.add('click', function () {
-            openBalloon(coords, address, geoObjects.list[address].reviews);
-        });
-    // }
+    placemark.events.add('click', function () {
+        openBalloon(coords, address, geoObjects.list[address].reviews);
+    });
 
-    // т.е. если использовать родной balloon, при добавлении в clusterer, он будет изсчезать вместе с placemark
+    // т.е. если использовать родной balloon, при добавлении в clusterer, он будет уничтожаться вместе с placemark
     clusterer.add(placemark);
 }
 
@@ -273,10 +277,16 @@ function createPlacemarks() {
 
 function mapClickHandler(e) {
     let coords = e.get('coords');
-    addBalloonWithoutGeoObject(coords);
+
+    if (map.balloon.isOpen()) {
+        map.balloon.close()
+    } else {
+        addBalloonWithoutGeoObject(coords);
+    }
 }
 
 function initMap() {
+    debugger
     ymaps.ready(function () {
         const mapCenter = [55.755381, 37.619044];
 
