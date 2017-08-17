@@ -11,8 +11,7 @@
 // problem with getData on balloon - done
 // fix open window bounds, maybe problem with coords (clear ls) - done
 // make pp-layout - done
-
-// save in ls when close in any way, save if only there is content
+// save in ls when close in any way, save if only there is content - done
 
 // add ids instead address counter
 // keep date in one format
@@ -122,16 +121,6 @@ function getContentLayout() {
             
             submit.addEventListener('click', this.submitClickHandler.bind(this));
             close.addEventListener('click', this.closeClickHandler.bind(this));
-
-            // вместо события можно переопределить метод close, перенести в init
-            map.balloon.events.add('close', () => {
-                const dataInBalloon = this.getData();
-
-                // при очистки темлпейта сохраняем данные если отзывы есть (пока и старые и новые)
-                if (dataInBalloon.properties.reviews.length) {
-                    geoObjects.saveToStorage();
-                }
-            });
         },
         clear: function () {
             const submit = document.querySelector('#submit');
@@ -139,6 +128,8 @@ function getContentLayout() {
 
             submit.removeEventListener('click', this.submitClickHandler.bind(this));
             close.removeEventListener('click', this.closeClickHandler.bind(this));
+
+            contentLayout.superclass.clear.call(this);
         },
 
         submitClickHandler: function (e) {
@@ -286,7 +277,6 @@ function mapClickHandler(e) {
 }
 
 function initMap() {
-    debugger
     ymaps.ready(function () {
         const mapCenter = [55.755381, 37.619044];
 
@@ -302,16 +292,22 @@ function initMap() {
 
         addClusterer();
         createPlacemarks();
+
+        // вместо события можно переопределить метод close
+        map.balloon.events.add('close', () => {
+            const dataInBalloon = map.balloon.getData();
+
+            // при очистки темлпейта сохраняем данные если отзывы есть (пока и старые и новые)
+            if (dataInBalloon.properties.reviews.length) {
+                geoObjects.saveToStorage();
+            }
+        });
     });
 }
 
-new Promise(function (resolve) {
-    window.onload = resolve;
-})
-    .then(function () {
-        return initMap();
-    })
-    .catch(function (e) {
+new Promise(resolve => window.onload = resolve)
+    .then(() => initMap())
+    .catch(e => {
         console.error(e);
         alert('Ошибка: ' + e.message);
     });
