@@ -1,79 +1,11 @@
-// save in ls when close, not when add review - done
-// save right structure - done
-// draw geoObjects on init - done
-// save diff geoObjects - done
-// get rid of closures - done
-// use let / const instead of vars - done
-// draw reviews in open window - done
-// close when click on close - done
-// draw review when submit - done
-// render reviews when open single placemark - done
-// problem with getData on balloon - done
-// fix open window bounds, maybe problem with coords (clear ls) - done
-// make pp-layout - done
-// save in ls when close in any way, save if only there is content - done
-
-// add ids instead address counter
-// keep date in one format
-// create modules
-// export trouble
-// make templates not js
-// Object.entries() instead of for-in
-// save data to dataset - realy?
 let map;
 let clusterer;
-const balloonTemplate = require('./templates/balloon.js');
-const clusterItemTemplate = require('./templates/cluster-item.js');
-const storage = localStorage;
-
-let id = 0;
-
-class GeoObjects {
-    constructor() {
-        this.list = {};
-        this.loadFromStorage();
-    }
-
-    addGeoObject(geoObject, address) {
-        this.list[address] = geoObject;
-        // id++;
-    }
-
-    saveToStorage() {
-        storage.geoObjects = JSON.stringify(this.list);
-    }
-
-    loadFromStorage() {
-        let saved = storage.geoObjects;
-
-        if (saved) {
-            this.list = JSON.parse(saved);
-        }
-    }
-}
-
+let GeoObjects = require('./createClasses.js').GeoObjects;
 let geoObjects = new GeoObjects();
-
-class GeoObject {
-    constructor(coords, address) {
-        this.coords = coords;
-        this.address = address;
-        this.reviews = [];
-    }
-
-    addReview(review) {
-        this.reviews.push(review);
-    }
-}
-
-class Review {
-    constructor(config) {
-        this.author = config.author;
-        this.place = config.place;
-        this.text = config.text;
-        this.date = config.date;
-    }
-}
+let GeoObject = require('./createClasses.js').GeoObject;
+let Review = require('./createClasses.js').Review;
+let getClusterLayout = require('./getLayouts.js').getClusterLayout;
+let getContentLayout = require('./getLayouts.js').getContentLayout;
 
 function getCurrentGeoObject(address) {
     return geoObjects.list[address];
@@ -102,47 +34,18 @@ function createReview() {
     } else {
         thisGeoObject.reviews.push(review);
     }
-    let updatedData = {};
-    updatedData.properties = thisGeoObject;
+
     createPlacemark(review, coords, address);
 
     if (data.coords) {
+        let updatedData = {};
+        updatedData.properties = thisGeoObject;
         map.balloon.setData(updatedData);
     }
 }
 
-function getContentLayout() {
-    const contentLayout = ymaps.templateLayoutFactory.createClass(balloonTemplate, {
-        build: function () {
-            contentLayout.superclass.build.call(this);
-            
-            const submit = document.querySelector('#submit');
-            const close = document.querySelector('#close');
-            
-            submit.addEventListener('click', this.submitClickHandler.bind(this));
-            close.addEventListener('click', this.closeClickHandler.bind(this));
-        },
-        clear: function () {
-            const submit = document.querySelector('#submit');
-            const close = document.querySelector('#close');
-
-            submit.removeEventListener('click', this.submitClickHandler.bind(this));
-            close.removeEventListener('click', this.closeClickHandler.bind(this));
-
-            contentLayout.superclass.clear.call(this);
-        },
-
-        submitClickHandler: function (e) {
-            e.preventDefault();
-            createReview();
-        },
-        closeClickHandler: function (e) {
-            e.preventDefault();
-            map.balloon.close();
-        }
-    });
-
-    return contentLayout;
+function closeBalloon() {
+    map.balloon.close();
 }
 
 function createPlacemark(review, coords, address) {
@@ -164,7 +67,7 @@ function createPlacemark(review, coords, address) {
         openBalloon(coords, address, geoObjects.list[address].reviews);
     });
 
-    // т.е. если использовать родной balloon, при добавлении в clusterer, он будет уничтожаться вместе с placemark
+    // т.к. если использовать родной balloon, при добавлении в clusterer, он будет уничтожаться вместе с placemark
     clusterer.add(placemark);
 }
 
@@ -205,34 +108,6 @@ function addBalloonWithoutGeoObject(coords) {
         })
 }
 
-function getClusterLayout() {
-    const renderClusterItem = ymaps.templateLayoutFactory.createClass(clusterItemTemplate, {
-        // детали здесь https://tech.yandex.ru/maps/jsbox/2.1/placemark_balloon_layout
-        build: function () {
-            renderClusterItem.superclass.build.call(this);
-
-            const link = document.querySelector('#address');
-            link.addEventListener('click', this.linkClickHandler.bind(this));
-        },
-        clear: function () {
-            const link = document.querySelector('#address');
-            link.removeEventListener('click', this.linkClickHandler.bind(this));
-
-            renderClusterItem.superclass.clear.call(this);
-        },
-
-        linkClickHandler: function (e) {
-            e.preventDefault();
-            // заменить дата на getClustererData
-            const data = this._data.properties._data;
-            openBalloon(data.coords, data.address, geoObjects.list[data.address].reviews);
-        }
-
-    });
-
-    return renderClusterItem;
-}
-
 function addClusterer() {
     clusterer = new ymaps.Clusterer({
         clusterDisableClickZoom: true,
@@ -263,17 +138,6 @@ function createPlacemarks() {
             }
         }
     }
-
-}
-
-function mapClickHandler(e) {
-    let coords = e.get('coords');
-
-    if (map.balloon.isOpen()) {
-        map.balloon.close()
-    } else {
-        addBalloonWithoutGeoObject(coords);
-    }
 }
 
 function initMap() {
@@ -287,7 +151,13 @@ function initMap() {
         });
 
         map.events.add('click', function (e) {
-            mapClickHandler(e);
+            let coords = e.get('coords');
+
+            if (map.balloon.isOpen()) {
+                map.balloon.close()
+            } else {
+                addBalloonWithoutGeoObject(coords);
+            }
         });
 
         addClusterer();
@@ -311,3 +181,11 @@ new Promise(resolve => window.onload = resolve)
         console.error(e);
         alert('Ошибка: ' + e.message);
     });
+
+
+module.exports = {
+    createReview: createReview,
+    closeBalloon: closeBalloon,
+    openBalloon: openBalloon,
+    geoObjects: geoObjects
+};
